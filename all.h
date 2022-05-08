@@ -527,11 +527,15 @@ void rega(Fn *);
 
 /* gas.c */
 enum Asm {
+	Vasm,
 	Gasmacho,
 	Gaself,
 };
+extern char *gascombeg;
+extern char *gascomend;
 extern char *gasloc;
 extern char *gassym;
+extern char *gaslit;
 void gasinit(enum Asm);
 void gasemitlnk(char *, Lnk *, char *, FILE *);
 void gasemitfntail(char *, FILE *);

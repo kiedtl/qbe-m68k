@@ -4,3 +4,7 @@
 
 - Pass that deals w/ 64-bit temporaries by transforming them into pairs of
   32-bit temporaries
+
+- Figure out if frame pointer & friends (link, unlk) are needed, and add them
+  back in if that's the case.
+  - Would need to update rt/rt.asm

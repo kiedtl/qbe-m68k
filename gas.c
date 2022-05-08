@@ -1,22 +1,41 @@
 #include "all.h"
 
-
-char *gasloc, *gassym;
 static int gasasm;
+
+/* gascombeg: Comment begin */
+/* gascomend: Comment end */
+/* gaslit: Literal marker, vasm requires `#' */
+char *gascombeg, *gascomend, *gasloc, *gassym, *gaslit;
 
 void
 gasinit(enum Asm asmmode)
 {
 	gasasm = asmmode;
+
 	switch (gasasm) {
-	case Gaself:
+	break; case Vasm:
+		gaslit = "#";
+		break;
+	break; case Gaself: case Gasmacho:
+		gaslit = "";
+	}
+
+	switch (gasasm) {
+	break; case Vasm: case Gaself:
 		gasloc = ".L";
 		gassym = "";
-		break;
-	case Gasmacho:
+	break; case Gasmacho:
 		gasloc = "L";
 		gassym = "_";
-		break;
+	}
+
+	switch (gasasm) {
+	break; case Vasm:
+		gascombeg = "; ";
+		gascomend = "";
+	break; case Gaself: case Gasmacho:
+		gascombeg = "/* ";
+		gascomend = " */";
 	}
 }
 
@@ -145,7 +164,8 @@ gasemitfin(FILE *f)
 		fprintf(f, ".section .note.GNU-stack,\"\",@progbits\n\n");
 	if (!stash)
 		return;
-	fprintf(f, "/* floating point constants */\n.data\n");
+	fprintf(f, "%sfloating point constants%s\n", gascombeg, gascomend);
+	fprintf(f, ".data\n");
 	for (sz=16; sz>=4; sz/=2)
 		for (b=stash, i=0; b; b=b->link, i++) {
 			if (b->size == sz) {

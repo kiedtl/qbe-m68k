@@ -39,7 +39,7 @@ data(Dat *d)
 	if (dbg)
 		return;
 	if (d->type == DEnd) {
-		fputs("/* end data */\n\n", outf);
+		fprintf(outf, "%send data %s\n\n", gascombeg, gascomend);
 		freeall();
 	}
 	gasemitdat(d, outf);
@@ -95,7 +95,8 @@ func(Fn *fn)
 	if (!dbg) {
 		T.emitfn(fn, outf);
 		gasemitfntail(fn->name, outf);
-		fprintf(outf, "/* end function %s */\n\n", fn->name);
+		fprintf(outf, "%send function %s%s\n\n",
+				gascombeg, fn->name, gascomend);
 	} else
 		fprintf(stderr, "\n");
 	freeall();
@@ -147,12 +148,14 @@ main(int ac, char *av[])
 			}
 			break;
 		case 'G':
-			if (strcmp(optarg, "e") == 0)
+			if (strcmp(optarg, "v") == 0)
+				asmmode = Vasm;
+			else if (strcmp(optarg, "e") == 0)
 				asmmode = Gaself;
 			else if (strcmp(optarg, "m") == 0)
 				asmmode = Gasmacho;
 			else {
-				fprintf(stderr, "unknown gas flavor '%s'\n", optarg);
+				fprintf(stderr, "unknown asm type '%s'\n", optarg);
 				exit(1);
 			}
 			break;

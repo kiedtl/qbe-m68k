@@ -85,8 +85,8 @@ static struct {
 	{ Oreqz,   Ki, "seqz %=, %0" },
 	{ Ornez,   Ki, "snez %=, %0" },
 	{ Ocall,   Kw, "jalr %0" },
-	{ Opea,    Ki, "pea %0.%t" },
-	{ Oaddr,   Ki, "lea (%0,%1),%=" },
+	{ Opush,   Ki, "move.%t %0, -(a7)" },
+	{ Oaddr,   Ki, "add %0, %=" }, /* TODO: assert that %1 == %= */
 	{ NOp, 0, 0 }
 };
 
@@ -159,35 +159,34 @@ emitf(char *s, Ins *i, Fn *fn, FILE *f)
 			break;
 		case '=':
 		case '0':
-			r = c == '=' ? i->to : i->arg[0];
-			switch (rtype(r)) {
-			default:
-				die("invalid first argument");
-			case RTmp:
-				assert(isreg(r));
-				fputs(rname[r.val], f);
-				break;
-			case RCon:
-				pc = &fn->con[r.val];
-				assert(pc->type == CBits);
-				fprintf(f, "%d", (int)pc->bits.i);
-				break;
-			}
-			break;
 		case '1':
-			r = i->arg[1];
+			if (c == '=') {
+				r = i->to;
+			} else {
+				assert(c == '0' || c == '1');
+				r = i->arg[c - '0'];
+			}
 			switch (rtype(r)) {
 			default:
 				die("invalid second argument");
 			case RTmp:
-				assert(isreg(r));
+				if (c == '=')
+					assert(isreg(r));
 				fputs(rname[r.val], f);
 				break;
 			case RCon:
 				pc = &fn->con[r.val];
-				assert(pc->type == CBits);
-				assert(pc->bits.i >= -2048 && pc->bits.i < 2048);
-				fprintf(f, "%d", (int)pc->bits.i);
+				assert(pc->type == CBits || pc->type == CAddr);
+				if (pc->type == CBits) {
+					fprintf(f, "#%d", (int)pc->bits.i);
+				} else if (pc->type == CAddr) {
+					char *l = str(pc->label);
+					char *p = pc->local ? gasloc : l[0] == '"' ? "" : gassym;
+					fprintf(f, "%s%s%s", gaslit, p, l);
+					if (pc->bits.i) {
+						fprintf(f, "%+"PRId64, pc->bits.i);
+					}
+				}
 				break;
 			}
 			break;
@@ -227,7 +226,7 @@ loadcon(Con *c, int r, int k, FILE *f)
 	rn = rname[r];
 	switch (c->type) {
 	case CAddr:
-		fprintf(f, "\tla %s, ", rn);
+		fprintf(f, "\tmove.l %s, ", rn);
 		emitaddr(c, f);
 		fputc('\n', f);
 		break;
@@ -235,7 +234,7 @@ loadcon(Con *c, int r, int k, FILE *f)
 		n = c->bits.i;
 		if (!w)
 			n = (int32_t)n;
-		fprintf(f, "\tli %s, %"PRIu64"\n", rn, n);
+		fprintf(f, "\tmove %s, %"PRIu64"\n", rn, n);
 		break;
 	default:
 		die("invalid constant");
@@ -263,8 +262,6 @@ static void
 emitins(Ins *i, Fn *fn, FILE *f)
 {
 	int o;
-	char *rn;
-	int64_t s;
 	Con *con;
 
 	switch (i->op) {
@@ -337,7 +334,7 @@ emitins(Ins *i, Fn *fn, FILE *f)
 			con = &fn->con[i->arg[0].val];
 			if (con->type != CAddr || con->bits.i)
 				goto invalid;
-			fprintf(f, "\tjsr %s\n", str(con->label));
+			fprintf(f, "\tbsr %s\n", str(con->label));
 			break;
 		case RTmp:
 			emitf("jalr %0", i, fn, f);
@@ -406,8 +403,6 @@ m68k_emitfn(Fn *fn, FILE *f)
 	}
 	frame = (frame + 15) & ~15;
 
-	fprintf(f, "\tlink.w fp,#%d\n", frame);
-
 	for (pr=m68k_rclob, off=0; *pr>=0; pr++) {
 		if (fn->reg & BIT(*pr)) {
 			fprintf(f,
@@ -448,10 +443,7 @@ m68k_emitfn(Fn *fn, FILE *f)
 					off += 8;
 				}
 			}
-			fprintf(f,
-				"\tunlk fp\n"
-				"\trts\n"
-			);
+			fprintf(f, "\trts\n");
 			break;
 		case Jjmp:
 		Jmp:

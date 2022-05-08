@@ -141,7 +141,7 @@ O(acmn,    T(w,l,e,e, w,l,e,e), 0) X(0, 0, 0) V(0)
 O(afcmp,   T(e,e,s,d, e,e,s,d), 0) X(0, 0, 0) V(0)
 O(reqz,    T(w,l,e,e, x,x,e,e), 0) X(0, 0, 0) V(0)
 O(rnez,    T(w,l,e,e, x,x,e,e), 0) X(0, 0, 0) V(0)
-O(pea,     T(w,e,e,e, x,x,x,x), 0) X(0, 0, 0) V(0) /* m68k */
+O(push,    T(w,e,e,e, x,x,x,x), 0) X(0, 0, 0) V(0) /* m68k */
 
 /* Arguments, Parameters, and Calls */
 O(par,     T(x,x,x,x, x,x,x,x), 0) X(0, 0, 0) V(0)

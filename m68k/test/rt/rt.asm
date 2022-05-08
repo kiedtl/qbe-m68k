@@ -1,5 +1,3 @@
-	.equ OUTPUT_ADDR, 0x400000
-
 vector_table:
 	.long STACK_AREA                     ;  0: SP
 	.long _rt_begin                      ;  1: PC
@@ -101,11 +99,11 @@ _rt_putul:
 _rt_puts:
 	move.l  (4,a7),a0                  ; a0 is the string ptr
 .puts_loop:
-	move.b  (a0),d2                    ; d0 is scratch
-	ext.w   d2
-	ext.l   d2
+	move.b  (a0),d0                    ; d0 is scratch
+	ext.w   d0
+	ext.l   d0
 
-	move.l  d2,-(a7)
+	move.l  d0,-(a7)
 	bsr     _rt_putc
 	addq.w  #4,a7
 
@@ -139,20 +137,12 @@ _rt_nmi:
 	jmp     (vector_table+4,PC)        ; reset program counter
 
 
-; ----- Some allocated space ---------------------------------------------------
+; ----- Misc constants ---------------------------------------------------------
 
 	; For the default main
 STR:
 	.string "Hello, World!\n"
 
-
-	; Stack area, allocated 255 bytes for it. Must be aligned properly
-	; if you don't want weird bus errors.
-	;
-	; (NOTE: stack grows downwards, hence the .zero before the label)
-	.zero 0xff
-	.align 4
-STACK_AREA:
-
-CAN_OUTPUT:
-	.zero 2
+	.equ STACK_AREA,  0x00ffe0         ; NOTE: stack grows downwards
+	.equ CAN_OUTPUT,  0x00fff0
+	.equ OUTPUT_ADDR, 0x400000

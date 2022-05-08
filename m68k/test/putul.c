@@ -1,5 +1,6 @@
 #ifdef _M68K_
-#define putc(c, f) _rt_putc(c)
+#include "rt/rt.h"
+#define putchar(c) _rt_putc(c)
 #else
 #include <stdio.h>
 #endif
@@ -12,14 +13,14 @@ putul(unsigned u)
 	x /= 10;
 
 	for (; x > 0; x /= 10)
-		putc('0' + (u / x % 10), stderr);
+		putchar('0' + (u / x % 10));
 }
 
-#ifndef _M68K_
+#ifdef STANDALONE
 void
 main(void)
 {
 	putul(256);
-	putc('\n', stdout);
+	putchar('\n');
 }
 #endif

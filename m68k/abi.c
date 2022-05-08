@@ -395,7 +395,7 @@ selcall(Fn *fn, Ins *i0, Ins *i1, Insl **ilp)
 		assert((c->class & Cstk) && "All args should be on stack");
 
 		if (i->op == Oarg) {
-			emit(Opea, 0, R, i->arg[0], R);
+			emit(Opush, 0, R, i->arg[0], R);
 			off += 8;
 		} else if (i->op == Oargc) {
 			if (c->class & Cstk1) {
