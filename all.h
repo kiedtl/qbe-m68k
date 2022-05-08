@@ -345,10 +345,11 @@ struct Fn {
 	int ncon;
 	int nmem;
 	uint nblk;
-	int retty; /* index in typ[], -1 if no aggregate return */
+	int retty; /* aggregate type returned.
+		      index in typ[], -1 if no aggregate return */
 	Ref retr;
 	Blk **rpo;
-	bits reg;
+	bits reg;  /* registers used by function */
 	int slot;
 	char vararg;
 	char dynalloc;

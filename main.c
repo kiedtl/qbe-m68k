@@ -21,11 +21,13 @@ char debug['Z'+1] = {
 extern Target T_amd64_sysv;
 extern Target T_arm64;
 extern Target T_rv64;
+extern Target T_m68k;
 
 static Target *tlist[] = {
 	&T_amd64_sysv,
 	&T_arm64,
 	&T_rv64,
+	&T_m68k,
 	0
 };
 static FILE *outf;

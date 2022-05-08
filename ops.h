@@ -129,7 +129,7 @@ O(copy,    T(w,l,s,d, x,x,x,x), 0) X(0, 0, 1) V(0)
 /* Miscellaneous and Architecture-Specific Operations */
 O(nop,     T(x,x,x,x, x,x,x,x), 0) X(0, 0, 1) V(0)
 O(addr,    T(m,m,e,e, x,x,e,e), 0) X(0, 0, 1) V(0)
-O(swap,    T(w,l,s,d, w,l,s,d), 0) X(1, 0, 0) V(0)
+O(swap,    T(w,l,s,d, w,l,s,d), 0) X(1, 0, 0) V(0) /* m68k, rv64 */
 O(sign,    T(w,l,e,e, x,x,e,e), 0) X(0, 0, 0) V(0)
 O(salloc,  T(e,l,e,e, e,x,e,e), 0) X(0, 0, 0) V(0)
 O(xidiv,   T(w,l,e,e, x,x,e,e), 0) X(1, 0, 0) V(0)
@@ -141,6 +141,7 @@ O(acmn,    T(w,l,e,e, w,l,e,e), 0) X(0, 0, 0) V(0)
 O(afcmp,   T(e,e,s,d, e,e,s,d), 0) X(0, 0, 0) V(0)
 O(reqz,    T(w,l,e,e, x,x,e,e), 0) X(0, 0, 0) V(0)
 O(rnez,    T(w,l,e,e, x,x,e,e), 0) X(0, 0, 0) V(0)
+O(pea,     T(w,e,e,e, x,x,x,x), 0) X(0, 0, 0) V(0) /* m68k */
 
 /* Arguments, Parameters, and Calls */
 O(par,     T(x,x,x,x, x,x,x,x), 0) X(0, 0, 0) V(0)

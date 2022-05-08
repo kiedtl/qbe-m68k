@@ -407,12 +407,12 @@ blit(Ref rdst, uint doff, Ref rsrc, uint boff, uint sz, Fn *fn)
 		{ Ostoreh, Oloaduh, Kw, 2 },
 		{ Ostoreb, Oloadub, Kw, 1 }
 	};
-	Ref r, r1;
-	uint s;
 
-	for (p=tbl; sz; p++)
-		for (s=p->size; sz>=s; sz-=s, doff+=s, boff+=s) {
-			r = newtmp("blt", Kl, fn);
+	Ref r1;
+
+	for (p=tbl; sz; p++) {
+		for (uint s=p->size; sz>=s; sz-=s, doff+=s, boff+=s) {
+			Ref r = newtmp("blt", Kl, fn);
 			r1 = newtmp("blt", Kl, fn);
 			emit(p->st, 0, R, r, r1);
 			emit(Oadd, Kl, r1, rdst, getcon(doff, fn));
@@ -420,6 +420,7 @@ blit(Ref rdst, uint doff, Ref rsrc, uint boff, uint sz, Fn *fn)
 			emit(p->ld, p->cls, r, r1, R);
 			emit(Oadd, Kl, r1, rsrc, getcon(boff, fn));
 		}
+	}
 }
 
 void

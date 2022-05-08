@@ -382,8 +382,7 @@ doblk(Blk *b, RMap *cur)
 				stmov += i+1 - curi;
 				continue;
 			}
-			if (isreg(i->to))
-			if (rtype(i->arg[0]) == RTmp)
+			if (isreg(i->to) && rtype(i->arg[0]) == RTmp)
 				sethint(i->arg[0].val, i->to.val);
 			/* fall through */
 		default:

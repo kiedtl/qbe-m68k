@@ -1,0 +1,6 @@
+- [Makefile] Should the default target be m68k if `uname -m` == m68k?
+- Test suite, add to list of test suites in Makefile
+- Figure out what the hell are MAKESURE's and add them back if needed
+
+- Pass that deals w/ 64-bit temporaries by transforming them into pairs of
+  32-bit temporaries
