@@ -5,21 +5,37 @@ enum {
 	Ka = -2, /* matches all classes */
 };
 
+/* Instruction format strings:
+ *
+ * if the format string starts with *, the instruction
+ * is assumed to be 1-address and is put in 2-address
+ * mode using an extra mov if necessary
+ *
+ * if the format string starts with -, the instruction
+ * is assumed to be 3-address and is put in 2-address
+ * mode using an extra mov if necessary
+ *
+ * if the format string starts with +, the same as the
+ * above applies, but commutativity is also assumed
+ *
+ * %k  is used to set the class of the instruction,
+ *     expanding to `w` or `l` depending on the class.
+ * %0  is the first argument
+ * %1  is the second argument
+ * %=  is the result
+ *
+ */
 static struct {
 	short op;
 	short cls;
 	char *asm;
 } omap[] = {
-	{ Oadd,    Ki, "add.%k %=, %0, %1" },
-	{ Osub,    Ki, "sub.%k %=, %0, %1" },
-	{ Oneg,    Ki, "neg%k %=, %0" },
-	{ Odiv,    Ki, "div%k %=, %0, %1" },
-	{ Orem,    Ki, "rem%k %=, %0, %1" },
-	{ Orem,    Kl, "rem %=, %0, %1" },
-	{ Oudiv,   Ki, "divu%k %=, %0, %1" },
-	{ Ourem,   Ki, "remu%k %=, %0, %1" },
-	{ Omul,    Ki, "mul%k %=, %0, %1" },
-	{ Omul,    Ka, "fmul.%k %=, %0, %1" },
+	{ Oadd,    Ki, "+add.%k  %=, %1" },
+	{ Osub,    Ki, "-sub.%k  %=, %1" },
+	{ Oneg,    Ki, "*neg.%k  %=, %0" },
+	{ Odiv,    Ki, "-divs.%k %=, %1" },
+	{ Oudiv,   Ki, "-divu.%k %=, %1" },
+	{ Omul,    Ki, "+muls.%k %=, %0, %1" },
 	{ Oand,    Ki, "and %=, %0, %1" },
 	{ Oor,     Ki, "or %=, %0, %1" },
 	{ Oxor,    Ki, "xor %=, %0, %1" },
@@ -105,6 +121,8 @@ static char *rname[] = {
 	[D7] = "d7",
 };
 
+static void emitins(Ins *i, Fn *fn, FILE *f);
+
 static int64_t
 slot(int s, Fn *fn)
 {
@@ -130,12 +148,70 @@ emitaddr(Con *c, FILE *f)
 }
 
 static void
+emitcopy(Ref dest, Ref src, int k, Fn *fn, FILE *f)
+{
+	Ins icp = {0};
+
+	icp.op = Ocopy;
+	icp.arg[0] = src;
+	icp.to = dest;
+	icp.cls = k;
+
+	emitins(&icp, fn, f);
+}
+
+/*
+ * Convert an A-address instruction to B-address, where A is {2,3} and B is
+ * {1,2}.
+ *
+ * Convmode is one of '*', '+', or '-'. See the comment at the beginning of the
+ * opcode table for more info.
+ *
+ */
+static void
+convins(Fn *fn, Ins *i, char convmode, FILE *f)
+{
+	(void)fn;
+
+	switch (convmode) {
+	case '*': /* 2-address -> 1-address */
+		assert((req(i->arg[1], R)) &&
+			"2/3-address instruction was supposed to be 1-address");
+		if (!req(i->arg[0], i->to)) {
+			emitcopy(i->to, i->arg[0], i->cls, fn, f);
+		}
+		break;
+	case '+': /* 3-address -> 2-address, commutative */
+		/* Instruction is commutative, allow i->to and i->arg[1]
+		 * to be merged by swapping with i->arg[0] */
+		if (req(i->arg[1], i->to)) {
+			Ref tmp = i->arg[0];
+			i->arg[0] = i->arg[1];
+			i->arg[1] = tmp;
+		}
+		/* fallthrough */
+	case '-': /* 3-address -> 2-address */
+		assert((!req(i->arg[1], i->to) || req(i->arg[0], i->to)) &&
+			"cannot convert instruction to 2-address!");
+		emitcopy(i->to, i->arg[0], i->cls, fn, f);
+		break;
+	}
+}
+
+static void
 emitf(char *s, Ins *i, Fn *fn, FILE *f)
 {
 	Ref r;
 	int k, c;
 	Con *pc;
 	int64_t offset;
+
+	switch (*s) {
+	break; case '*': case '+': case '-':
+		convins(fn, i, *s, f);
+		s++;
+		break;
+	}
 
 	fputc('\t', f);
 	for (;;) {
@@ -345,6 +421,9 @@ emitins(Ins *i, Fn *fn, FILE *f)
 			die("invalid call argument");
 		}
 		break;
+	case Orem:
+	case Ourem:
+		die("REM/UREM not implemented");
 	}
 }
 
@@ -462,12 +541,8 @@ m68k_emitfn(Fn *fn, FILE *f)
 				neg = 1;
 			}
 			assert(isreg(b->jmp.arg));
-			fprintf(f,
-				"\tb%sz %s, .L%d\n",
-				neg ? "ne" : "eq",
-				rname[b->jmp.arg.val],
-				id0+b->s2->id
-			);
+			fprintf(f, "\ttst %s\n", rname[b->jmp.arg.val]);
+			fprintf(f, "\tb%s .L%d\n", neg ? "ne" : "eq", id0+b->s2->id);
 			goto Jmp;
 		}
 	}
