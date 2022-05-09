@@ -29,6 +29,9 @@ extern int m68k_rsave[];
 extern int m68k_rclob[];
 extern M68kOp m68k_op[];
 
+/* lower.c */
+void m68k_lower(Fn *);
+
 /* abi.c */
 bits m68k_retregs(Ref, int[2]);
 bits m68k_argregs(Ref, int[2]);

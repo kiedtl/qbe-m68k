@@ -52,6 +52,7 @@ struct Target {
 	bits (*retregs)(Ref, int[2]);
 	bits (*argregs)(Ref, int[2]);
 	int (*memargs)(int);
+	void (*lower)(Fn *); /* Might be NULL */
 	void (*abi)(Fn *);
 	void (*isel)(Fn *);
 	void (*emitfn)(Fn *, FILE *);

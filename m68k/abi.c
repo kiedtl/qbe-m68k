@@ -521,9 +521,74 @@ selvastart(Fn *fn, Params p, Ref ap)
 	emit(Oaddr, Kl, rsave, SLOT(-s), R);
 }
 
+/*
+ * The m68k div/divu instruction has some oddities:
+ * - The remainder and quotient are both dumped into the destination register,
+ *   the remainder in the high word and the quotient in the low word.
+ * - There's only div.w and divu.w -- you can't divide a 32-bit long.
+ * - Weirdness happens if the quotient is larger than FFFF.
+ *
+ * For these reasons we attempt to convert O[u]div and O[u]rem to multiplying
+ * and bitshifting where possible. When we can't, we emit a call to a
+ * __div/__udiv/__rem/__urem routine which the user must provide somehow.
+ *
+ * (This is still TODO, for now we're just emitting `__div` calls)
+ *
+ */
+static void
+seldiv(Ins *i, Fn *fn)
+{
+	Con func = {0};
+	func.type = CAddr;
+
+	switch (i->op) {
+	break; case Oudiv:
+		func.label = intern("__udiv");
+	break; case Odiv:
+		func.label = intern("__idiv");
+	break; case Ourem:
+		func.label = intern("__urem");
+	break; case Orem:
+		func.label = intern("__irem");
+	break;
+	}
+
+	emit(Ocall, 0, R, newcon(&func, fn), R);
+
+	//emit(Opush, 0, R, i->arg[1], R);
+	//emit(Opush, 0, R, i->arg[0], R);
+
+	// *curi = (Ins){Oarg, k, R, {r}};
+	emit(Oarg, i->cls, R, i->arg[0], R);
+	emit(Oarg, i->cls, R, i->arg[1], R);
+}
+
 void
 m68k_abi(Fn *fn)
 {
+	/*
+	 * Probably not considered an ABI thing, but let's lower
+	 * div/udiv/rem/urem instructions here while we're at it.
+	 *
+	 * Do this before processing args/params/calls, since seldiv will emit
+	 * calls.
+	 *
+	 */
+	for (Blk *b = fn->start; b; b = b->link) {
+		curi = &insb[NIns];
+		for (Ins *i = &b->ins[b->nins]; i != b->ins;) {
+			switch ((--i)->op) {
+			break; case Oudiv: case Odiv: case Ourem: case Orem:
+				seldiv(i, fn);
+			break; default:
+				emiti(*i);
+			break;
+			}
+		}
+		b->nins = &insb[NIns] - curi;
+		idup(&b->ins, curi, b->nins);
+	}
+
 	Blk *b;
 	Ins *i, *i0, *ip;
 	Insl *il;
@@ -545,7 +610,7 @@ m68k_abi(Fn *fn)
 	b->nins = n;
 	b->ins = i0;
 
-	/* lower calls, returns, and vararg instructions */
+	/* calls, returns, and vararg instructions */
 	il = 0;
 	b = fn->start;
 	do {

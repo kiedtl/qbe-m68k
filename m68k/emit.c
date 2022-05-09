@@ -421,9 +421,9 @@ emitins(Ins *i, Fn *fn, FILE *f)
 			die("invalid call argument");
 		}
 		break;
-	case Orem:
-	case Ourem:
+	case Orem: case Ourem:
 		die("REM/UREM not implemented");
+		break;
 	}
 }
 

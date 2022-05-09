@@ -100,24 +100,28 @@ selcmp(Ins i, int k, int op, Fn *fn)
 static void
 sel(Ins i, Fn *fn)
 {
-	Ins *i0;
-	int ck, cc;
-
 	if (INRANGE(i.op, Oalloc, Oalloc1)) {
-		i0 = curi - 1;
+		Ins *i0 = curi - 1;
 		salloc(i.to, i.arg[0], fn);
 		fixarg(&i0->arg[0], Kl, i0, fn);
 		return;
 	}
+
+	int ck, cc;
 	if (iscmp(i.op, &ck, &cc)) {
 		selcmp(i, ck, cc, fn);
 		return;
 	}
-	if (i.op != Onop) {
+
+	switch (i.op) {
+	break; case Onop:
+		/* do nothing */
+	break; default:
 		emiti(i);
-		i0 = curi; /* fixarg() can change curi */
+		Ins *i0 = curi; /* fixarg() can change curi */
 		fixarg(&i0->arg[0], argcls(&i, 0), i0, fn);
 		fixarg(&i0->arg[1], argcls(&i, 1), i0, fn);
+	break;
 	}
 }
 

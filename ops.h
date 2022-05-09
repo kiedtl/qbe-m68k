@@ -143,7 +143,13 @@ O(reqz,    T(w,l,e,e, x,x,e,e), 0) X(0, 0, 0) V(0)
 O(rnez,    T(w,l,e,e, x,x,e,e), 0) X(0, 0, 0) V(0)
 O(push,    T(w,e,e,e, x,x,x,x), 0) X(0, 0, 0) V(0) /* m68k */
 
-/* Arguments, Parameters, and Calls */
+/* Arguments, Parameters, and Calls.
+ *
+ * Oarg and friends are used to pass arguments to a function. Opar and friends
+ * are for recieving those arguments in the function.
+ *
+ * Oarg and Opar are for wlsd types, and Oargc/Oparc are for aggregate types.
+ */
 O(par,     T(x,x,x,x, x,x,x,x), 0) X(0, 0, 0) V(0)
 O(parc,    T(e,x,e,e, e,x,e,e), 0) X(0, 0, 0) V(0)
 O(pare,    T(e,x,e,e, e,x,e,e), 0) X(0, 0, 0) V(0)
