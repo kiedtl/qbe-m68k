@@ -85,12 +85,17 @@ static struct {
 	{ Oreqz,   Ki, "seqz %=, %0" },
 	{ Ornez,   Ki, "snez %=, %0" },
 	{ Ocall,   Kw, "jalr %0" },
-	{ Opush,   Ki, "move.%t %0, -(a7)" },
+	{ Opush,   Ki, "move.%k %0, -(a7)" },
 	{ Oaddr,   Ki, "add %0, %=" }, /* TODO: assert that %1 == %= */
 	{ NOp, 0, 0 }
 };
 
-static char clschr[] = {'w', 'l', 's', 'd'};
+static char *clsstr[] = {
+	[Kw] = "l",
+	[Kl] = "BUG",
+	[Ks] = "BUG",
+	[Kd] = "BUG",
+};
 
 static char *rname[] = {
 	[D0] = "d0", "d1", "d2", "d3", "d4", "d5", "d6",
@@ -150,12 +155,8 @@ emitf(char *s, Ins *i, Fn *fn, FILE *f)
 			else
 				abort();
 			break;
-		case 'k': /* TODO: weed out usages and remove if possible */
-			if (i->cls != Kl)
-				fputc(clschr[i->cls], f);
-			break;
-		case 't':
-			fputc(clschr[i->cls], f);
+		case 'k':
+			fputs(clsstr[i->cls], f);
 			break;
 		case '=':
 		case '0':
