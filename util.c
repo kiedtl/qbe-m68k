@@ -369,6 +369,15 @@ newcon(Con *c0, Fn *fn)
 }
 
 Ref
+newlabelcon(char *name, Fn *fn)
+{
+	Con func = {0};
+	func.type = CAddr;
+	func.label = intern(name);
+	return newcon(&func, fn);
+}
+
+Ref
 getcon(int64_t val, Fn *fn)
 {
 	int c;
@@ -608,4 +617,41 @@ dumpts(BSet *bs, Tmp *tmp, FILE *f)
 	for (t=Tmp0; bsiter(bs, &t); t++)
 		fprintf(f, " %s", tmp[t].name);
 	fprintf(f, " ]\n");
+}
+
+
+/*
+ * Check if an integer is a power of two.
+ *
+ * Taken from Sean Anderson's Bit Twiddling Hacks:
+ * http://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2
+ */
+int
+ispow2(bits x)
+{
+	return x && (x & (x - 1)) == 0;
+}
+
+/*
+ * Get log(2) of a u32.
+ *
+ * Taken from this SO question:
+ * https://stackoverflow.com/questions/11376288/fast-computing-of-log2-for-64-bit-integers
+ */
+uint
+u32log2(uint value)
+{
+	const uint tab32[32] = {
+		 0,  9,  1, 10, 13, 21,  2, 29,
+		11, 14, 16, 18, 22, 25,  3, 30,
+		 8, 12, 20, 28, 15, 17, 24,  7,
+		19, 27, 23,  6, 26,  5,  4, 31
+	};
+
+	value |= value >> 1;
+	value |= value >> 2;
+	value |= value >> 4;
+	value |= value >> 8;
+	value |= value >> 16;
+	return tab32[(uint)(value * 0x07C4ACDD) >> 27];
 }

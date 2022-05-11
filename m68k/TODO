@@ -8,3 +8,19 @@
 - Figure out if frame pointer & friends (link, unlk) are needed, and add them
   back in if that's the case.
   - Would need to update rt/rt.asm
+
+
+Roadmap
+-------
+
+x Get a hello world working
+- div.c
+- putul.c
+- collatz.c
+- knight.c
+- ...
+- bresenham line demo
+- bresenham circle demo
+- shadowcasting demo
+- roguelike for ti-89!
+- uxn for ti-89!

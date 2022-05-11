@@ -255,7 +255,7 @@ emitf(char *s, Ins *i, Fn *fn, FILE *f)
 				pc = &fn->con[r.val];
 				assert(pc->type == CBits || pc->type == CAddr);
 				if (pc->type == CBits) {
-					fprintf(f, "#%d", (int)pc->bits.i);
+					fprintf(f, "#%ld", pc->bits.i);
 				} else if (pc->type == CAddr) {
 					char *l = str(pc->label);
 					char *p = pc->local ? gasloc : l[0] == '"' ? "" : gassym;
@@ -421,8 +421,9 @@ emitins(Ins *i, Fn *fn, FILE *f)
 			die("invalid call argument");
 		}
 		break;
+	case Odiv: case Oudiv:
 	case Orem: case Ourem:
-		die("REM/UREM not implemented");
+		die("DIV/UDIV/REM/UREM not implemented");
 		break;
 	}
 }

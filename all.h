@@ -443,6 +443,7 @@ int phicls(int, Tmp *);
 Ref newtmp(char *, int, Fn *);
 void chuse(Ref, int, Fn *);
 Ref newcon(Con *, Fn *);
+Ref newlabelcon(char *name, Fn *fn);
 Ref getcon(int64_t, Fn *);
 int addcon(Con *, Con *);
 void blit(Ref, uint, Ref, uint, uint, Fn *);
@@ -461,6 +462,9 @@ void bsinter(BSet *, BSet *);
 void bsdiff(BSet *, BSet *);
 int bsequal(BSet *, BSet *);
 int bsiter(BSet *, int *);
+
+int ispow2(bits x);
+uint u32log2(uint value);
 
 static inline int
 bshas(BSet *bs, uint elt)

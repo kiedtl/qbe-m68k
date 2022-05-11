@@ -3,21 +3,25 @@ BIN = qbe
 V = @
 OBJDIR = obj
 
-SRC      = main.c util.c parse.c cfg.c mem.c ssa.c alias.c load.c copy.c \
-           fold.c live.c spill.c rega.c gas.c
-AMD64SRC = amd64/targ.c amd64/sysv.c amd64/isel.c amd64/emit.c
-ARM64SRC = arm64/targ.c arm64/abi.c arm64/isel.c arm64/emit.c
-RV64SRC  = rv64/targ.c rv64/abi.c rv64/isel.c rv64/emit.c
-M68KSRC  = m68k/targ.c m68k/abi.c m68k/isel.c m68k/emit.c
-SRCALL   = $(SRC) $(AMD64SRC) $(ARM64SRC) $(RV64SRC) $(M68KSRC)
+SRC       = main.c util.c parse.c cfg.c mem.c ssa.c alias.c load.c copy.c \
+            fold.c live.c spill.c rega.c gas.c
+AMD64SRC  = amd64/targ.c amd64/sysv.c amd64/isel.c amd64/emit.c
+ARM64SRC  = arm64/targ.c arm64/abi.c arm64/isel.c arm64/emit.c
+RV64SRC   = rv64/targ.c rv64/abi.c rv64/isel.c rv64/emit.c
+M68KSRC   = m68k/targ.c m68k/abi.c m68k/isel.c m68k/emit.c
+LIBQBESRC = third_party/libqbe/tool/div_magic.c
+SRCALL    = $(SRC) $(AMD64SRC) $(ARM64SRC) $(RV64SRC) $(M68KSRC) $(LIBQBE)
 
-AMD64OBJ = $(AMD64SRC:%.c=$(OBJDIR)/%.o)
-ARM64OBJ = $(ARM64SRC:%.c=$(OBJDIR)/%.o)
-RV64OBJ  = $(RV64SRC:%.c=$(OBJDIR)/%.o)
-M68KOBJ  = $(M68KSRC:%.c=$(OBJDIR)/%.o)
-OBJ      = $(SRC:%.c=$(OBJDIR)/%.o) $(AMD64OBJ) $(ARM64OBJ) $(RV64OBJ) $(M68KOBJ)
+AMD64OBJ  = $(AMD64SRC:%.c=$(OBJDIR)/%.o)
+ARM64OBJ  = $(ARM64SRC:%.c=$(OBJDIR)/%.o)
+RV64OBJ   = $(RV64SRC:%.c=$(OBJDIR)/%.o)
+M68KOBJ   = $(M68KSRC:%.c=$(OBJDIR)/%.o)
+LIBQBEOBJ = $(LIBQBESRC:%.c=$(OBJDIR)/%.o)
+OBJ       = $(SRC:%.c=$(OBJDIR)/%.o) $(AMD64OBJ) $(ARM64OBJ) $(RV64OBJ) $(M68KOBJ) \
+	    $(LIBQBEOBJ)
 
-CFLAGS += -Wall -Wextra -std=c99 -g -pedantic
+CFLAGS += -Wall -Wextra -std=c99 -g -pedantic \
+	  -Ithird_party/libqbe/ -Ithird_party/libqbe/tool/
 
 $(OBJDIR)/$(BIN): $(OBJ) $(OBJDIR)/timestamp
 	@test -z "$(V)" || echo "ld $@"
@@ -25,6 +29,7 @@ $(OBJDIR)/$(BIN): $(OBJ) $(OBJDIR)/timestamp
 
 $(OBJDIR)/%.o: %.c $(OBJDIR)/timestamp
 	@test -z "$(V)" || echo "cc $<"
+	@f='$@'; mkdir -p $${f%/*}
 	$(V)$(CC) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR)/timestamp:

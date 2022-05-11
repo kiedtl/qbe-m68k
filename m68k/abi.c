@@ -1,4 +1,5 @@
 #include "all.h"
+#include "libqbe-utils.h"
 
 typedef struct Class Class;
 typedef struct Insl Insl;
@@ -521,6 +522,34 @@ selvastart(Fn *fn, Params p, Ref ap)
 	emit(Oaddr, Kl, rsave, SLOT(-s), R);
 }
 
+/* Internal function for seldiv */
+static void
+_selcomptimediv(Ins *i, Fn *fn)
+{
+	assert(rtype(i->arg[1]) == RCon);
+	bits dvs = fn->con[i->arg[1].val].bits.i;
+
+	if (dvs >= 0xFFFFFFFF) {
+		die("64-bit division unimplemented");
+	}
+
+	if (ispow2(dvs)) {
+		bits shift = u32log2(dvs);
+		emit(Oshr, Kw, i->to, getcon(shift, fn), i->arg[0]);
+	} else if (dvs == 10 || dvs == 5) {
+		char *s = dvs == 10 ? "__divu32_10" : "__divu32_5";
+		emit(Ocall, 0, R, newlabelcon(s, fn), R);
+		emit(Oarg, i->cls, R, i->arg[0], R);
+	} else {
+		struct MagicSet m = libqbe_umagiccalc(dvs);
+		emit(Ocall, 0, R, newlabelcon("__divu32_magic", fn), R);
+		emit(Oarg, i->cls, R, i->arg[0], R);
+		emit(Oarg, Kw, R, getcon(dvs, fn), R);
+		emit(Oarg, Kw, R, getcon(m.m, fn), R);
+		emit(Oarg, Kw, R, getcon(m.s, fn), R);
+	}
+}
+
 /*
  * The m68k div/divu instruction has some oddities:
  * - The remainder and quotient are both dumped into the destination register,
@@ -538,27 +567,33 @@ selvastart(Fn *fn, Params p, Ref ap)
 static void
 seldiv(Ins *i, Fn *fn)
 {
-	Con func = {0};
-	func.type = CAddr;
+	/* Check if the argument is comptime-known */
+	if (i->op == Oudiv) {
+		switch (rtype(i->arg[1])) {
+		break; case RCon:
+			;
+			Con pc = fn->con[i->arg[1].val];
+			if (pc.type == CBits) {
+				_selcomptimediv(i, fn);
+				return;
+			}
+		break;
+		}
+	}
 
+	/* Okay, fallback to a generic libqbe function call */
+
+	char *s = NULL;
 	switch (i->op) {
-	break; case Oudiv:
-		func.label = intern("__udiv");
-	break; case Odiv:
-		func.label = intern("__idiv");
-	break; case Ourem:
-		func.label = intern("__urem");
-	break; case Orem:
-		func.label = intern("__irem");
+	break; case Oudiv: s = "__udiv";
+	break; case Odiv:  s = "__idiv";
+	break; case Ourem: s = "__urem";
+	break; case Orem:  s = "__irem";
 	break;
 	}
 
-	emit(Ocall, 0, R, newcon(&func, fn), R);
+	emit(Ocall, 0, R, newlabelcon(s, fn), R);
 
-	//emit(Opush, 0, R, i->arg[1], R);
-	//emit(Opush, 0, R, i->arg[0], R);
-
-	// *curi = (Ins){Oarg, k, R, {r}};
 	emit(Oarg, i->cls, R, i->arg[0], R);
 	emit(Oarg, i->cls, R, i->arg[1], R);
 }
