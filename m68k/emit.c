@@ -101,7 +101,7 @@ static struct {
 	{ Oreqz,   Ki, "seqz %=, %0" },
 	{ Ornez,   Ki, "snez %=, %0" },
 	{ Ocall,   Kw, "jalr %0" },
-	{ Opush,   Ki, "move.%k %0, -(a7)" },
+	{ Opush,   Ki, "move.%k %0, -(sp)" },
 	{ Oaddr,   Ki, "add %0, %=" }, /* TODO: assert that %1 == %= */
 	{ NOp, 0, 0 }
 };
@@ -284,7 +284,7 @@ emitf(char *s, Ins *i, Fn *fn, FILE *f)
 				break;
 			case RSlot:
 				offset = slot(r.val, fn);
-				fprintf(f, "%d(fp)", (int)offset);
+				fprintf(f, "%d(sp)", (int)offset);
 				break;
 			}
 			break;
