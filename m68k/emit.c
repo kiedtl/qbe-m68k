@@ -32,34 +32,21 @@ static struct {
 } omap[] = {
 	{ Oadd,    Ki, "+add.%k  %=, %1" },
 	{ Osub,    Ki, "-sub.%k  %=, %1" },
-	{ Oneg,    Ki, "*neg.%k  %=, %0" },
+	{ Oneg,    Ki, "*neg.%k  %="     },
 	{ Odiv,    Ki, "-divs.%k %=, %1" },
 	{ Oudiv,   Ki, "-divu.%k %=, %1" },
-	{ Omul,    Ki, "+muls.%k %=, %0, %1" },
-	{ Oand,    Ki, "and %=, %0, %1" },
-	{ Oor,     Ki, "or %=, %0, %1" },
-	{ Oxor,    Ki, "xor %=, %0, %1" },
-	{ Osar,    Ki, "sra%k %=, %0, %1" },
-	{ Oshr,    Ki, "srl%k %=, %0, %1" },
-	{ Oshl,    Ki, "sll%k %=, %0, %1" },
-	{ Ocsltl,  Ki, "slt %=, %0, %1" },
-	{ Ocultl,  Ki, "sltu %=, %0, %1" },
-	{ Oceqs,   Ki, "feq.s %=, %0, %1" },
-	{ Ocges,   Ki, "fge.s %=, %0, %1" },
-	{ Ocgts,   Ki, "fgt.s %=, %0, %1" },
-	{ Ocles,   Ki, "fle.s %=, %0, %1" },
-	{ Oclts,   Ki, "flt.s %=, %0, %1" },
-	{ Oceqd,   Ki, "feq.d %=, %0, %1" },
-	{ Ocged,   Ki, "fge.d %=, %0, %1" },
-	{ Ocgtd,   Ki, "fgt.d %=, %0, %1" },
-	{ Ocled,   Ki, "fle.d %=, %0, %1" },
-	{ Ocltd,   Ki, "flt.d %=, %0, %1" },
+	{ Omul,    Ki, "+muls.%k %1, %=" },
+	{ Oand,    Ki, "-and.%k  %1, %=" },
+	{ Oor,     Ki, "-or.%k   %1, %=" },
+	{ Oxor,    Ki, "-eor.%k  %1, %=" },
+	{ Osar,    Ki, "-asr.%k  %1, %=" },
+	{ Oshr,    Ki, "-lsr.%k  %1, %=" },
+	{ Oshl,    Ki, "-lsl.%k  %1, %=" },
+	{ Oxcmp,   Ki,  "cmp.%k  %1, %0" },
 	{ Ostoreb, Kw, "sb %0, %M1" },
 	{ Ostoreh, Kw, "sh %0, %M1" },
 	{ Ostorew, Kw, "sw %0, %M1" },
 	{ Ostorel, Ki, "sd %0, %M1" },
-	{ Ostores, Kw, "fsw %0, %M1" },
-	{ Ostored, Kw, "fsd %0, %M1" },
 	{ Oloadsb, Ki, "lb %=, %M0" },
 	{ Oloadub, Ki, "lbu %=, %M0" },
 	{ Oloadsh, Ki, "lh %=, %M0" },
@@ -77,24 +64,6 @@ static struct {
 	{ Oextuh,  Ki, "zext.h %=, %0" },
 	{ Oextsw,  Kl, "sext.w %=, %0" },
 	{ Oextuw,  Kl, "zext.w %=, %0" },
-	{ Otruncd, Ks, "fcvt.s.d %=, %0" },
-	{ Oexts,   Kd, "fcvt.d.s %=, %0" },
-	{ Ostosi,  Kw, "fcvt.w.s %=, %0, rtz" },
-	{ Ostosi,  Kl, "fcvt.l.s %=, %0, rtz" },
-	{ Ostoui,  Kw, "fcvt.wu.s %=, %0, rtz" },
-	{ Ostoui,  Kl, "fcvt.lu.s %=, %0, rtz" },
-	{ Odtosi,  Kw, "fcvt.w.d %=, %0, rtz" },
-	{ Odtosi,  Kl, "fcvt.l.d %=, %0, rtz" },
-	{ Odtoui,  Kw, "fcvt.wu.d %=, %0, rtz" },
-	{ Odtoui,  Kl, "fcvt.lu.d %=, %0, rtz" },
-	{ Oswtof,  Ka, "fcvt.%k.w %=, %0" },
-	{ Ouwtof,  Ka, "fcvt.%k.wu %=, %0" },
-	{ Osltof,  Ka, "fcvt.%k.l %=, %0" },
-	{ Oultof,  Ka, "fcvt.%k.lu %=, %0" },
-	{ Ocast,   Kw, "fmv.x.w %=, %0" },
-	{ Ocast,   Kl, "fmv.x.d %=, %0" },
-	{ Ocast,   Ks, "fmv.w.x %=, %0" },
-	{ Ocast,   Kd, "fmv.d.x %=, %0" },
 	{ Ocopy,   Ki, "move.%k %=, %0" },
 	{ Oswap,   Kl, "exg.l %0, %1" }, /* TODO: is Oswap EXG or SWAP? */
 	//{ Oswap,   Ki, "mv %?, %0\n\tmv %0, %1\n\tmv %1, %?" },
@@ -107,8 +76,8 @@ static struct {
 };
 
 static char *clsstr[] = {
-	[Kw] = "l",
-	[Kl] = "BUG",
+	[Kw] = "w",
+	[Kl] = "l",
 	[Ks] = "BUG",
 	[Kd] = "BUG",
 };
@@ -119,6 +88,7 @@ static char *rname[] = {
 	[A6] = "a6",
 	[A7] = "a7",
 	[D7] = "d7",
+	[CCR] = "ccr",
 };
 
 static void emitins(Ins *i, Fn *fn, FILE *f);
@@ -529,7 +499,7 @@ m68k_emitfn(Fn *fn, FILE *f)
 		case Jjmp:
 		Jmp:
 			if (b->s1 != b->link)
-				fprintf(f, "\tj .L%d\n", id0+b->s1->id);
+				fprintf(f, "\tjmp .L%d\n", id0+b->s1->id);
 			else
 				lbl = 0;
 			break;

@@ -19,82 +19,99 @@ negate(Ref *pr, Fn *fn)
 	*pr = r;
 }
 
+/*
+ * Convert cmp operations into some CCR-bit fiddling.
+ *
+ * TODO: we should instead be emitting a conditional branch to blocks that set
+ * the dest as appropriate, like vbcc does.
+ */
 static void
 selcmp(Ins i, int k, int op, Fn *fn)
 {
-	Ins *icmp;
-	Ref r, r0, r1;
-	int sign, swap, neg;
+	(void)k;
+
+	Ref tmp;
 
 	switch (op) {
-	case Cieq:
-		r = newtmp("isel", k, fn);
-		emit(Oreqz, i.cls, i.to, r, R);
-		emit(Oxor, k, r, i.arg[0], i.arg[1]);
-		icmp = curi;
-		fixarg(&icmp->arg[0], k, icmp, fn);
-		fixarg(&icmp->arg[1], k, icmp, fn);
-		return;
-	case Cine:
-		r = newtmp("isel", k, fn);
-		emit(Ornez, i.cls, i.to, r, R);
-		emit(Oxor, k, r, i.arg[0], i.arg[1]);
-		icmp = curi;
-		fixarg(&icmp->arg[0], k, icmp, fn);
-		fixarg(&icmp->arg[1], k, icmp, fn);
-		return;
-	case Cisge: sign = 1, swap = 0, neg = 1; break;
-	case Cisgt: sign = 1, swap = 1, neg = 0; break;
-	case Cisle: sign = 1, swap = 1, neg = 1; break;
-	case Cislt: sign = 1, swap = 0, neg = 0; break;
-	case Ciuge: sign = 0, swap = 0, neg = 1; break;
-	case Ciugt: sign = 0, swap = 1, neg = 0; break;
-	case Ciule: sign = 0, swap = 1, neg = 1; break;
-	case Ciult: sign = 0, swap = 0, neg = 0; break;
-	case NCmpI+Cfeq:
-	case NCmpI+Cfge:
-	case NCmpI+Cfgt:
-	case NCmpI+Cfle:
-	case NCmpI+Cflt:
-		swap = 0, neg = 0;
-		break;
-	case NCmpI+Cfuo:
-		negate(&i.to, fn);
-		/* fall through */
-	case NCmpI+Cfo:
-		r0 = newtmp("isel", i.cls, fn);
-		r1 = newtmp("isel", i.cls, fn);
-		emit(Oand, i.cls, i.to, r0, r1);
-		op = KWIDE(k) ? Oceqd : Oceqs;
-		emit(op, i.cls, r0, i.arg[0], i.arg[0]);
-		icmp = curi;
-		fixarg(&icmp->arg[0], k, icmp, fn);
-		fixarg(&icmp->arg[1], k, icmp, fn);
-		emit(op, i.cls, r1, i.arg[1], i.arg[1]);
-		icmp = curi;
-		fixarg(&icmp->arg[0], k, icmp, fn);
-		fixarg(&icmp->arg[1], k, icmp, fn);
-		return;
-	case NCmpI+Cfne:
-		swap = 0, neg = 1;
-		i.op = KWIDE(k) ? Oceqd : Oceqs;
-		break;
-	default:
-		assert(0 && "unknown comparison");
+	break; case Cieq:
+		/*
+		 * NE = Z
+		 *
+		 * move   ccr, dest
+		 * and    0x4, dest
+		 */
+		emit(Oand, Kl, i.to, i.to, getcon(0x0004, fn));
+		emit(Ocopy, Kl, i.to, TMP(CCR), i.to);
+	break; case Cine:
+		/*
+		 * NE = ~Z
+		 *
+		 * move   ccr, dest
+		 * and    0x4, dest
+		 * not    dest
+		 */
+		emit(Oxor, Kl, i.to, i.to, getcon(-1, fn));
+		emit(Oand, Kl, i.to, i.to, getcon(0x0004, fn));
+		emit(Ocopy, Kl, i.to, TMP(CCR), i.to);
+	break; case Cisge:
+		tmp = newtmp("isel", Kl, fn);
+		/*
+		 * SGE = N.V + ~N.~V
+		 *
+		 * move   ccr, dest
+		 * and    0x4, dest
+		 * move   dest, tmp
+		 * not    tmp
+		 * add    tmp, dest
+		 */
+		emit(Oadd, Kl, i.to, tmp, i.to);
+		emit(Oxor, Kl, tmp, i.to, getcon(-1, fn));
+		emit(Ocopy, Kl, i.to, tmp, i.to);
+		emit(Oand, Kl, i.to, i.to, getcon(0x000a, fn));
+		emit(Ocopy, Kl, i.to, TMP(CCR), i.to);
+	break; case Cisgt:
+		err("Cisgt unimplemented");
+	break; case Cisle:
+		err("Cisle unimplemented");
+	break; case Cislt:
+		err("Cislt unimplemented");
+	break; case Ciuge:
+		/*
+		 * UGE = ~C
+		 *
+		 * move   ccr, dest
+		 * and    0x1, dest
+		 * not    dest
+		 */
+		emit(Oxor, Kl, i.to, i.to, getcon(-1, fn));
+		emit(Oand, Kl, i.to, i.to, getcon(0x0001, fn));
+		emit(Ocopy, Kl, i.to, TMP(CCR), i.to);
+	break; case Ciugt:
+		/*
+		 * UGT = ~C.~Z
+		 *
+		 * move   ccr, dest
+		 * and    0x5, dest
+		 * not    dest
+		 */
+		emit(Oxor, Kl, i.to, i.to, getcon(-1, fn));
+		emit(Oand, Kl, i.to, i.to, getcon(0x0005, fn));
+		emit(Ocopy, Kl, i.to, i.to, TMP(CCR));
+	break; case Ciule:
+		err("Ciule unimplemented");
+	break; case Ciult:
+		/*
+		 * ULT = C
+		 *
+		 * move   ccr, dest
+		 * and    0x1, dest
+		 */
+		emit(Oand, Kl, i.to, i.to, getcon(0x0001, fn));
+		emit(Ocopy, Kl, i.to, i.to, TMP(CCR));
+	break;
 	}
-	if (op < NCmpI)
-		i.op = sign ? Ocsltl : Ocultl;
-	if (swap) {
-		r = i.arg[0];
-		i.arg[0] = i.arg[1];
-		i.arg[1] = r;
-	}
-	if (neg)
-		negate(&i.to, fn);
-	emiti(i);
-	icmp = curi;
-	fixarg(&icmp->arg[0], k, icmp, fn);
-	fixarg(&icmp->arg[1], k, icmp, fn);
+
+	emit(Oxcmp, i.cls, R, i.arg[0], i.arg[1]);
 }
 
 static void

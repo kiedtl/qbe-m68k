@@ -27,6 +27,7 @@ arm64_memargs(int op)
 
 Target T_arm64 = {
 	.name = "arm64",
+	.wordsize = 64,
 	.gpr0 = R0,
 	.ngpr = NGPR,
 	.fpr0 = V0,

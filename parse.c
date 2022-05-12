@@ -2,9 +2,10 @@
 #include <ctype.h>
 #include <stdarg.h>
 
-enum {
-	Ke = -2, /* Erroneous mode */
-	Km = Kl, /* Memory pointer */
+enum Kext {
+	Ke = -2,         /* Erroneous mode */
+	Km = Kl,         /* Memory pointer */
+	Kagg = K_END,    /* Aggregate type */
 };
 
 Op optab[NOp] = {
@@ -427,7 +428,7 @@ parsecls(int *tyn)
 		err("invalid class specifier");
 	case Ttyp:
 		*tyn = findtyp(ntyp);
-		return 4;
+		return Kagg;
 	case Tw:
 		return Kw;
 	case Tl:
@@ -482,7 +483,7 @@ parserefl(int arg)
 			err("invalid argument");
 		if (!arg && rtype(r) != RTmp)
 			err("invalid function parameter");
-		if (k == 4)
+		if (k == Kagg)
 			if (arg)
 				*curi = (Ins){Oargc, Kl, R, {TYPE(ty), r}};
 			else
@@ -632,7 +633,7 @@ DoOp:
 		parserefl(1);
 		op = Ocall;
 		expect(Tnl);
-		if (k == 4) {
+		if (k == Kagg) {
 			k = Kl;
 			arg[1] = TYPE(ty);
 		} else
@@ -645,7 +646,7 @@ DoOp:
 		op = Oload;
 	if (op == Talloc1 || op == Talloc2)
 		op = Oalloc;
-	if (k == 4)
+	if (k == Kagg)
 		err("size class must be w, l, s, or d");
 	if (op >= NPubOp)
 		err("invalid instruction");
@@ -860,12 +861,12 @@ parsefields(Field *fld, Typ *ty, int t)
 		ty1 = 0;
 		switch (t) {
 		default: err("invalid type member specifier");
-		case Td: type = Fd; s = 8; a = 3; break;
-		case Tl: type = Fl; s = 8; a = 3; break;
-		case Ts: type = Fs; s = 4; a = 2; break;
-		case Tw: type = Fw; s = 4; a = 2; break;
-		case Th: type = Fh; s = 2; a = 1; break;
-		case Tb: type = Fb; s = 1; a = 0; break;
+		case Td: type = Fd; s =    KD_SZ; a = KL_SZ == 8 ? 3 : 2; break;
+		case Tl: type = Fl; s =    KL_SZ; a = KL_SZ == 8 ? 3 : 2; break;
+		case Ts: type = Fs; s =    KS_SZ; a = KL_SZ == 8 ? 2 : 1; break;
+		case Tw: type = Fw; s =    KW_SZ; a = KL_SZ == 8 ? 2 : 1; break;
+		case Th: type = Fh; s = KW_SZ>>2; a = KL_SZ == 8 ? 1 : 0; break;
+		case Tb: type = Fb; s =        1; a = KL_SZ == 8 ? 0 : 0; break;
 		case Ttyp:
 			type = FTyp;
 			ty1 = &typ[findtyp(ntyp-1)];

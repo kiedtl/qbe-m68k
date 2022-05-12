@@ -14,6 +14,7 @@ amd64_memargs(int op)
 
 Target T_amd64_sysv = {
 	.name = "amd64_sysv",
+	.wordsize = 64,
 	.gpr0 = RAX,
 	.ngpr = NGPR,
 	.fpr0 = XMM0,

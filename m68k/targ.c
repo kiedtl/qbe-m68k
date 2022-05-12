@@ -18,8 +18,9 @@ int m68k_rclob[] = {
 };
 
 /* D7 is used as a swap register */
-#define RGLOB  (BIT(D7) | BIT(FP) | BIT(SP))
-#define NRGLOB 3
+/* TODO: should we include SR here? */
+#define RGLOB  (BIT(CCR) | BIT(D7) | BIT(FP) | BIT(SP))
+#define NRGLOB 4
 
 static int
 m68k_memargs(int op)
@@ -30,6 +31,7 @@ m68k_memargs(int op)
 
 Target T_m68k = {
 	.name = "m68k",
+	.wordsize = 32,
 	.gpr0 = D0,
 	.ngpr = NGPR,
 	.fpr0 = 1,

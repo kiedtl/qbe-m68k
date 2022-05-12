@@ -41,13 +41,14 @@ enum {
 
 struct Target {
 	char name[16];
-	int gpr0;   /* first general purpose reg */
+	uint wordsize;   /* either 32-bit or 64-bit */
+	int gpr0;        /* first general purpose reg */
 	int ngpr;
-	int fpr0;   /* first floating point reg */
+	int fpr0;        /* first floating point reg */
 	int nfpr;
-	bits rglob; /* globally live regs (e.g., sp, fp) */
+	bits rglob;      /* globally live regs (e.g., sp, fp) */
 	int nrglob;
-	int *rsave; /* caller-save */
+	int *rsave;      /* caller-save */
 	int nrsave[2];
 	bits (*retregs)(Ref, int[2]);
 	bits (*argregs)(Ref, int[2]);
@@ -181,16 +182,22 @@ enum {
 #define isarg(o) INRANGE(o, Oarg, Oargv)
 #define isret(j) INRANGE(j, Jret0, Jretc)
 
-enum {
+enum K {
 	Kx = -1, /* "top" class (see usecheck() and clsmerge()) */
-	Kw,
-	Kl,
-	Ks,
-	Kd
+	Kw = 0,
+	Kl = 1,
+	Ks = 2,
+	Kd = 3,
+	K_END,
 };
 
-#define KWIDE(k) ((k)&1)
-#define KBASE(k) ((k)>>1)
+#define KWIDE(k) ((k) == Kl || (k) == Kd)
+#define KBASE(k) ((k) == Ks || (k) == Kd)
+
+#define KW_SZ (T.wordsize == 64 ? 4 : 2)
+#define KL_SZ (T.wordsize == 64 ? 8 : 4)
+#define KS_SZ (T.wordsize == 64 ? 4 : 2)
+#define KD_SZ (T.wordsize == 64 ? 8 : 4)
 
 struct Op {
 	char *name;
