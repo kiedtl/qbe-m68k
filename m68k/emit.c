@@ -30,11 +30,11 @@ static struct {
 	short cls;
 	char *asm;
 } omap[] = {
-	{ Oadd,    Ki, "+add.%k  %=, %1" },
-	{ Osub,    Ki, "-sub.%k  %=, %1" },
+	{ Oadd,    Ki, "+add.%k  %1, %=" },
+	{ Osub,    Ki, "-sub.%k  %1, %=" },
 	{ Oneg,    Ki, "*neg.%k  %="     },
-	{ Odiv,    Ki, "-divs.%k %=, %1" },
-	{ Oudiv,   Ki, "-divu.%k %=, %1" },
+	{ Odiv,    Ki, "-divs.%k %1, %=" },
+	{ Oudiv,   Ki, "-divu.%k %1, %=" },
 	{ Omul,    Ki, "+muls.%k %1, %=" },
 	{ Oand,    Ki, "-and.%k  %1, %=" },
 	{ Oor,     Ki, "-or.%k   %1, %=" },
@@ -42,61 +42,60 @@ static struct {
 	{ Osar,    Ki, "-asr.%k  %1, %=" },
 	{ Oshr,    Ki, "-lsr.%k  %1, %=" },
 	{ Oshl,    Ki, "-lsl.%k  %1, %=" },
-	{ Oxcmp,   Ki,  "cmp.%k  %0, %1" },
+	{ Oxcmp,   Ki, "cmp.%k  %0, %1" },
 
 	/*
 	 * Note, scc/scs is used instead of shs/slo because some
 	 * asms (e.g. vasm) don't support those alternative menmonics.
 	 */
-	{ Oceqw,   Ki,  "seq.b   %="     },
-	{ Ocnew,   Ki,  "sne.b   %="     },
-	{ Ocsgew,  Ki,  "sge.b   %="     },
-	{ Ocsgtw,  Ki,  "sgt.b   %="     },
-	{ Ocslew,  Ki,  "sle.b   %="     },
-	{ Ocsltw,  Ki,  "slt.b   %="     },
-	{ Ocugew,  Ki,  "scc.b   %="     },
-	{ Ocugtw,  Ki,  "shi.b   %="     },
-	{ Oculew,  Ki,  "sls.b   %="     },
-	{ Ocultw,  Ki,  "scs.b   %="     },
+	{ Oceqw,   Ki, "seq.b  %="     },
+	{ Ocnew,   Ki, "sne.b  %="     },
+	{ Ocsgew,  Ki, "sge.b  %="     },
+	{ Ocsgtw,  Ki, "sgt.b  %="     },
+	{ Ocslew,  Ki, "sle.b  %="     },
+	{ Ocsltw,  Ki, "slt.b  %="     },
+	{ Ocugew,  Ki, "scc.b  %="     },
+	{ Ocugtw,  Ki, "shi.b  %="     },
+	{ Oculew,  Ki, "sls.b  %="     },
+	{ Ocultw,  Ki, "scs.b  %="     },
 	/* Long versions */
-	{ Oceql,   Ki,  "seq.b   %="     },
-	{ Ocnel,   Ki,  "sne.b   %="     },
-	{ Ocsgel,  Ki,  "sge.b   %="     },
-	{ Ocsgtl,  Ki,  "sgt.b   %="     },
-	{ Ocslel,  Ki,  "sle.b   %="     },
-	{ Ocsltl,  Ki,  "slt.b   %="     },
-	{ Ocugel,  Ki,  "scc.b   %="     },
-	{ Ocugtl,  Ki,  "shi.b   %="     },
-	{ Oculel,  Ki,  "sls.b   %="     },
-	{ Ocultl,  Ki,  "scs.b   %="     },
+	{ Oceql,   Ki, "seq.b  %="     },
+	{ Ocnel,   Ki, "sne.b  %="     },
+	{ Ocsgel,  Ki, "sge.b  %="     },
+	{ Ocsgtl,  Ki, "sgt.b  %="     },
+	{ Ocslel,  Ki, "sle.b  %="     },
+	{ Ocsltl,  Ki, "slt.b  %="     },
+	{ Ocugel,  Ki, "scc.b  %="     },
+	{ Ocugtl,  Ki, "shi.b  %="     },
+	{ Oculel,  Ki, "sls.b  %="     },
+	{ Ocultl,  Ki, "scs.b  %="     },
 
-	{ Ocopysr, Ki, "move.%k sr, %=" },
-	{ Ostoreb, Kw, "sb %0, %M1" },
-	{ Ostoreh, Kw, "sh %0, %M1" },
-	{ Ostorew, Kw, "sw %0, %M1" },
-	{ Ostorel, Ki, "sd %0, %M1" },
-	{ Oloadsb, Ki, "lb %=, %M0" },
-	{ Oloadub, Ki, "lbu %=, %M0" },
-	{ Oloadsh, Ki, "lh %=, %M0" },
-	{ Oloaduh, Ki, "lhu %=, %M0" },
+	{ Ocopysr, Ki, "move.%k  sr,  %=" },
+	{ Ostoreb, Kw, "move.b %0,  %M1" },
+	{ Ostoreh, Kw, "move.b %0,  %M1" },
+	{ Ostorew, Kw, "move.w %0,  %M1" },
+	{ Ostorel, Ki, "move.l %0,  %M1" },
+	{ Oloadsb, Ki, "move.b %M0, %=" },
+	{ Oloadub, Ki, "move.b %M0, %=" },
+	{ Oloadsh, Ki, "move.b %M0, %=" },
+	{ Oloaduh, Ki, "move.b %M0, %=" },
 	{ Oloadsw, Ki, "move.w %M0, %=" },
 	{ Oloaduw, Ki, "move.w %M0, %=" },
 	{ Oload,   Kw, "move.w %M0, %=" },
 	{ Oload,   Kl, "move.l %M0, %=" },
-	{ Oextsb,  Ki, "sext.b %=, %0" },
-	{ Oextub,  Ki, "zext.b %=, %0" },
-	{ Oextsh,  Ki, "sext.h %=, %0" },
-	{ Oextuh,  Ki, "zext.h %=, %0" },
-	{ Oextsw,  Kl, "ext.w  %0, %=" },
-	//{ Oextuw,  Kl, "zext.w %=, %0" },
-	{ Ocopy,   Ki, "move.%k %0, %=" },
-	{ Oswap,   Kl, "exg.l %0, %1" }, /* TODO: is Oswap EXG or SWAP? */
-	//{ Oswap,   Ki, "mv %?, %0\n\tmv %0, %1\n\tmv %1, %?" },
+	{ Oextsb,  Ki, "*ext.w  %=" },
+	{ Oextub,  Ki, "*ext.w  %=" },
+	{ Oextsh,  Ki, "*ext.w  %=" },
+	{ Oextuh,  Ki, "*ext.w  %=" },
+	{ Oextsw,  Kl, "*ext.w  %=" },
+	{ Oextuw,  Kl, "*ext.w  %=" },
+	{ Ocopy,   Ki, "move.%k  %0, %=" },
+	{ Oswap,   Kl, "exg.l    %0" },
 	{ Oreqz,   Ki, "seqz %=, %0" },
 	{ Ornez,   Ki, "snez %=, %0" },
-	{ Ocall,   Kw, "jalr %0" },
-	{ Opush,   Ki, "move.%k %0, -(sp)" },
-	{ Oaddr,   Ki, "add  %0, %=" }, /* TODO: assert that %1 == %= */
+	{ Ocall,   Kw, "bsr      %0" },
+	{ Opush,   Ki, "move.%k  %0, -(sp)" },
+	{ Oaddr,   Ki, "+add     %0, %=" },
 	{ NOp, 0, 0 }
 };
 
@@ -537,8 +536,8 @@ m68k_emitfn(Fn *fn, FILE *f)
 				neg = 1;
 			}
 			assert(isreg(b->jmp.arg));
-			fprintf(f, "\ttst %s\n", rname[b->jmp.arg.val]);
-			fprintf(f, "\tb%s .L%d\n", neg ? "ne" : "eq", id0+b->s2->id);
+			fprintf(f, "\ttst    %s\n", rname[b->jmp.arg.val]);
+			fprintf(f, "\tb%s    .L%d\n", neg ? "ne" : "eq", id0+b->s2->id);
 			goto Jmp;
 		}
 	}
