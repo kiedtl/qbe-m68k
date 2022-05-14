@@ -19,98 +19,20 @@ negate(Ref *pr, Fn *fn)
 	*pr = r;
 }
 
-/*
- * Convert cmp operations into some CCR-bit fiddling.
- *
- * TODO: we should instead be emitting a conditional branch to blocks that set
- * the dest as appropriate, like vbcc does.
- */
 static void
 selcmp(Ins i, int k, int op, Fn *fn)
 {
 	(void)k;
+	(void)op;
 
-	Ref tmp;
+	/* Sxx (SCC & friends) set the <Ea> to 0xFFFF, which might possibly
+	 * cause problems. So we convert it to the more usual boolean values.
+	 *
+	 * TODO: check if this is really necessary.
+	 */
+	emit(Oand, i.cls, i.to, i.to, getcon(1, fn));
 
-	switch (op) {
-	break; case Cieq:
-		/*
-		 * NE = Z
-		 *
-		 * move   ccr, dest
-		 * and    0x4, dest
-		 */
-		emit(Oand, Kl, i.to, i.to, getcon(0x0004, fn));
-		emit(Ocopy, Kl, i.to, TMP(CCR), i.to);
-	break; case Cine:
-		/*
-		 * NE = ~Z
-		 *
-		 * move   ccr, dest
-		 * and    0x4, dest
-		 * not    dest
-		 */
-		emit(Oxor, Kl, i.to, i.to, getcon(-1, fn));
-		emit(Oand, Kl, i.to, i.to, getcon(0x0004, fn));
-		emit(Ocopy, Kl, i.to, TMP(CCR), i.to);
-	break; case Cisge:
-		tmp = newtmp("isel", Kl, fn);
-		/*
-		 * SGE = N.V + ~N.~V
-		 *
-		 * move   ccr, dest
-		 * and    0x4, dest
-		 * move   dest, tmp
-		 * not    tmp
-		 * add    tmp, dest
-		 */
-		emit(Oadd, Kl, i.to, tmp, i.to);
-		emit(Oxor, Kl, tmp, i.to, getcon(-1, fn));
-		emit(Ocopy, Kl, i.to, tmp, i.to);
-		emit(Oand, Kl, i.to, i.to, getcon(0x000a, fn));
-		emit(Ocopy, Kl, i.to, TMP(CCR), i.to);
-	break; case Cisgt:
-		err("Cisgt unimplemented");
-	break; case Cisle:
-		err("Cisle unimplemented");
-	break; case Cislt:
-		err("Cislt unimplemented");
-	break; case Ciuge:
-		/*
-		 * UGE = ~C
-		 *
-		 * move   ccr, dest
-		 * and    0x1, dest
-		 * not    dest
-		 */
-		emit(Oxor, Kl, i.to, i.to, getcon(-1, fn));
-		emit(Oand, Kl, i.to, i.to, getcon(0x0001, fn));
-		emit(Ocopy, Kl, i.to, TMP(CCR), i.to);
-	break; case Ciugt:
-		/*
-		 * UGT = ~C.~Z
-		 *
-		 * move   ccr, dest
-		 * and    0x5, dest
-		 * not    dest
-		 */
-		emit(Oxor, Kl, i.to, i.to, getcon(-1, fn));
-		emit(Oand, Kl, i.to, i.to, getcon(0x0005, fn));
-		emit(Ocopy, Kl, i.to, i.to, TMP(CCR));
-	break; case Ciule:
-		err("Ciule unimplemented");
-	break; case Ciult:
-		/*
-		 * ULT = C
-		 *
-		 * move   ccr, dest
-		 * and    0x1, dest
-		 */
-		emit(Oand, Kl, i.to, i.to, getcon(0x0001, fn));
-		emit(Ocopy, Kl, i.to, i.to, TMP(CCR));
-	break;
-	}
-
+	emit(i.op, Kw, i.to, R, R);
 	emit(Oxcmp, i.cls, R, i.arg[0], i.arg[1]);
 }
 

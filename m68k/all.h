@@ -11,15 +11,15 @@ enum M68kReg {
 
 	A6, A7,
 	D7,
-	CCR,
+	SR,
 
 	NFPR = 0, /* No floating-point registers */
-	NGPR = CCR - D0 + 1,
+	NGPR = SR - D0 + 1,
 	NGPS = (D1 - D0 + 1) + (A1 - A0 + 1),
 	NFPS = 0,
 	NCLR = (A5 - A2 + 1) + (D6 - D2 + 1),
 };
-MAKESURE(reg_not_tmp, CCR < (int)Tmp0);
+MAKESURE(reg_not_tmp, SR < (int)Tmp0);
 
 struct M68kOp {
 	char imm;

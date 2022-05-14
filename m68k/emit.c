@@ -42,7 +42,35 @@ static struct {
 	{ Osar,    Ki, "-asr.%k  %1, %=" },
 	{ Oshr,    Ki, "-lsr.%k  %1, %=" },
 	{ Oshl,    Ki, "-lsl.%k  %1, %=" },
-	{ Oxcmp,   Ki,  "cmp.%k  %1, %0" },
+	{ Oxcmp,   Ki,  "cmp.%k  %0, %1" },
+
+	/*
+	 * Note, scc/scs is used instead of shs/slo because some
+	 * asms (e.g. vasm) don't support those alternative menmonics.
+	 */
+	{ Oceqw,   Ki, "seq.b   %="     },
+	{ Ocnew,   Ki, "sne.b   %="     },
+	{ Ocsgew,  Ki, "sge.b   %="     },
+	{ Ocsgtw,  Ki, "sgt.b   %="     },
+	{ Ocslew,  Ki, "sle.b   %="     },
+	{ Ocsltw,  Ki, "slt.b   %="     },
+	{ Ocugew,  Ki, "scc.b   %="     },
+	{ Ocugtw,  Ki, "shi.b   %="     },
+	{ Oculew,  Ki, "sls.b   %="     },
+	{ Ocultw,  Ki, "scs.b   %="     },
+	/* Long versions */
+	{ Oceql,   Ki, "seq.b   %="     },
+	{ Ocnel,   Ki, "sne.b   %="     },
+	{ Ocsgel,  Ki, "sge.b   %="     },
+	{ Ocsgtl,  Ki, "sgt.b   %="     },
+	{ Ocslel,  Ki, "sle.b   %="     },
+	{ Ocsltl,  Ki, "slt.b   %="     },
+	{ Ocugel,  Ki, "scc.b   %="     },
+	{ Ocugtl,  Ki, "shi.b   %="     },
+	{ Oculel,  Ki, "sls.b   %="     },
+	{ Ocultl,  Ki, "scs.b   %="     },
+
+	{ Ocopysr, Ki, "move.%k sr, %=" },
 	{ Ostoreb, Kw, "sb %0, %M1" },
 	{ Ostoreh, Kw, "sh %0, %M1" },
 	{ Ostorew, Kw, "sw %0, %M1" },
@@ -52,9 +80,6 @@ static struct {
 	{ Oloadsh, Ki, "lh %=, %M0" },
 	{ Oloaduh, Ki, "lhu %=, %M0" },
 	{ Oloadsw, Ki, "move.w %M0, %=" },
-	/* riscv64 always sign-extends 32-bit
-	 * values stored in 64-bit registers
-	 */
 	{ Oloaduw, Ki, "move.w %M0, %=" },
 	{ Oload,   Kw, "move.w %M0, %=" },
 	{ Oload,   Kl, "move.l %M0, %=" },
@@ -62,16 +87,16 @@ static struct {
 	{ Oextub,  Ki, "zext.b %=, %0" },
 	{ Oextsh,  Ki, "sext.h %=, %0" },
 	{ Oextuh,  Ki, "zext.h %=, %0" },
-	{ Oextsw,  Kl, "sext.w %=, %0" },
-	{ Oextuw,  Kl, "zext.w %=, %0" },
-	{ Ocopy,   Ki, "move.%k %=, %0" },
+	{ Oextsw,  Kl, "ext.w  %0, %=" },
+	//{ Oextuw,  Kl, "zext.w %=, %0" },
+	{ Ocopy,   Ki, "move.%k %0, %=" },
 	{ Oswap,   Kl, "exg.l %0, %1" }, /* TODO: is Oswap EXG or SWAP? */
 	//{ Oswap,   Ki, "mv %?, %0\n\tmv %0, %1\n\tmv %1, %?" },
 	{ Oreqz,   Ki, "seqz %=, %0" },
 	{ Ornez,   Ki, "snez %=, %0" },
 	{ Ocall,   Kw, "jalr %0" },
 	{ Opush,   Ki, "move.%k %0, -(sp)" },
-	{ Oaddr,   Ki, "add %0, %=" }, /* TODO: assert that %1 == %= */
+	{ Oaddr,   Ki, "add  %0, %=" }, /* TODO: assert that %1 == %= */
 	{ NOp, 0, 0 }
 };
 
@@ -88,7 +113,7 @@ static char *rname[] = {
 	[A6] = "a6",
 	[A7] = "a7",
 	[D7] = "d7",
-	[CCR] = "ccr",
+	[SR] = "sr",
 };
 
 static void emitins(Ins *i, Fn *fn, FILE *f);

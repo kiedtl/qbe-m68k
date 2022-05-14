@@ -18,8 +18,7 @@ int m68k_rclob[] = {
 };
 
 /* D7 is used as a swap register */
-/* TODO: should we include SR here? */
-#define RGLOB  (BIT(CCR) | BIT(D7) | BIT(FP) | BIT(SP))
+#define RGLOB  (BIT(SR) | BIT(D7) | BIT(FP) | BIT(SP))
 #define NRGLOB 4
 
 static int
