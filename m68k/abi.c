@@ -391,21 +391,21 @@ selcall(Fn *fn, Ins *i0, Ins *i1, Insl **ilp)
 	assert(stk);
 
 	/* populate the stack */
-	off = 0;
+	off = 4;
 	for (i=i0, c=ca; i<i1; i++, c++) {
 		assert((c->class & Cstk) && "All args should be on stack");
 
 		if (i->op == Oarg) {
 			emit(Opush, 0, R, i->arg[0], R);
-			off += 8;
+			off += 4;
 		} else if (i->op == Oargc) {
 			if (c->class & Cstk1) {
 				blit(r, off, i->arg[1], 0, 8, fn);
-				off += 8;
+				off += 4;
 			}
 			if (c->class & Cstk2) {
 				blit(r, off, i->arg[1], 8, 8, fn);
-				off += 8;
+				off += 4;
 			}
 		}
 	}

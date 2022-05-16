@@ -30,7 +30,7 @@ selcmp(Ins i, int k, int op, Fn *fn)
 	 *
 	 * TODO: check if this is really necessary.
 	 */
-	emit(Oand, i.cls, i.to, i.to, getcon(1, fn));
+	//emit(Oand, i.cls, i.to, i.to, getcon(1, fn));
 
 	emit(i.op, Kw, i.to, R, R);
 
@@ -43,6 +43,23 @@ selcmp(Ins i, int k, int op, Fn *fn)
 	}
 
 	emit(Oxcmp, i.cls, R, i.arg[0], i.arg[1]);
+}
+
+static void
+selload(Ins i, Fn *fn)
+{
+	(void)fn;
+	emiti(i);
+}
+
+static void
+selstore(Ins i, Fn *fn)
+{
+	(void)fn;
+
+	//emit(Ocopy, i.cls, i.to, TMP(A0), R);
+	//emit(i.op, i.cls, TMP(A0), i.arg[0], i.arg[1]);
+	emiti(i);
 }
 
 static void
@@ -64,6 +81,11 @@ sel(Ins i, Fn *fn)
 	switch (i.op) {
 	break; case Onop:
 		/* do nothing */
+	break; case Ostoreb: case Ostoreh: case Ostorel:
+		selstore(i, fn);
+	break; case Oloadsb: case Oloadub: case Oloadsh:
+	       case Oloaduh: case Oloadsw: case Oloaduw:
+		selload(i, fn);
 	break; default:
 		emiti(i);
 		Ins *i0 = curi; /* fixarg() can change curi */

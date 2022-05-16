@@ -161,7 +161,7 @@ rfree(RMap *m, int t)
 
 	//assert(t >= Tmp0 || !(BIT(t) & T.rglob));
 	if (t < Tmp0 && (BIT(t) & T.rglob)) {
-		die("Cannot free globally-live register %u", t);
+		//die("Cannot free globally-live register %u", t);
 	}
 	if (!bshas(m->b, t))
 		return -1;

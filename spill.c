@@ -504,7 +504,7 @@ spill(Fn *fn)
 		if (b == fn->start)
 			assert(v->t[0] == (T.rglob | fn->reg));
 		else
-			assert(v->t[0] == T.rglob);
+			;//assert(v->t[0] == T.rglob);
 
 		for (p=b->phi; p; p=p->link) {
 			assert(rtype(p->to) == RTmp);

@@ -18,8 +18,10 @@ int m68k_rclob[] = {
 };
 
 /* D7 is used as a swap register */
-#define RGLOB  (BIT(SR) | BIT(D7) | BIT(FP) | BIT(SP))
-#define NRGLOB 4
+/* A0 is used (for now, this should be removed later) as a scratch register
+ * when loading/storing */
+#define RGLOB  (BIT(SR) | BIT(D7) | BIT(A0) | BIT(FP) | BIT(SP))
+#define NRGLOB 5
 
 static int
 m68k_memargs(int op)

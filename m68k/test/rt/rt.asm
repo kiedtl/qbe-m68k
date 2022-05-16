@@ -3,7 +3,7 @@ vector_table:
 	.long _rt_begin                      ;  1: PC
 	.long _rt_exception_unhandled        ;  2: bus error
 	.long _rt_exception_unhandled        ;  3: address error
-	.long _rt_exception_unhandled        ;  4: illegal instruction
+	.long _rt_exception_illegal          ;  4: illegal instruction
 	.long _rt_exception_unhandled        ;  5: zero divide
 	.long _rt_exception_unhandled        ;  6: chk
 	.long _rt_exception_unhandled        ;  7: trapv
@@ -122,6 +122,12 @@ _rt_exception_unhandled:
 	stop    #2700                      ; wait for NMI
 	bra     _rt_exception_unhandled    ; shouldn't get here
 
+_rt_exception_illegal:
+	move.l  #STR_ILLEGAL,-(a7)
+	bsr     _rt_puts
+	addq.w  #4,a7
+	stop    #0xffff
+
 _rt_output_ready:
 	move.l  d0, -(a7)
 	move.b  #1, CAN_OUTPUT
@@ -142,6 +148,9 @@ _rt_nmi:
 	; For the default main
 STR:
 	.string "Hello, World!\n"
+
+STR_ILLEGAL:
+	.string "Illegal instruction\n"
 
 	.equ STACK_AREA,  0x00ffe0         ; NOTE: stack grows downwards
 	.equ CAN_OUTPUT,  0x00fff0

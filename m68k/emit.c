@@ -71,10 +71,10 @@ static struct {
 	{ Ocultl,  Ki, "scs.b  %="     },
 
 	{ Ocopysr, Ki, "move.%k  sr,  %=" },
-	{ Ostoreb, Kw, "move.b %0,  %M1" },
-	{ Ostoreh, Kw, "move.b %0,  %M1" },
-	{ Ostorew, Kw, "move.w %0,  %M1" },
-	{ Ostorel, Ki, "move.l %0,  %M1" },
+	{ Ostoreb, Kw, "move.l %1, a0\n\tmove.b %0,  (a0)" },
+	{ Ostoreh, Kw, "move.l %1, a0\n\tmove.b %0,  (a0)" },
+	{ Ostorew, Kw, "move.l %1, a0\n\tmove.w %0,  (a0)" },
+	{ Ostorel, Ki, "move.l %1, a0\n\tmove.l %0,  (a0)" },
 	{ Oloadsb, Ki, "move.b %M0, %=" },
 	{ Oloadub, Ki, "move.b %M0, %=" },
 	{ Oloadsh, Ki, "move.b %M0, %=" },
@@ -123,9 +123,9 @@ slot(int s, Fn *fn)
 	s = ((int32_t)s << 3) >> 3;
 	assert(s <= fn->slot);
 	if (s < 0)
-		return 8 + (-s * 4);
+		return 4 + (-s * 4);
 	else
-		return 8 + (-4 * (fn->slot - s));
+		return 4 + (-4 * (fn->slot - s));
 }
 
 static void
@@ -297,35 +297,18 @@ loadcon(Con *c, int r, int k, FILE *f)
 	rn = rname[r];
 	switch (c->type) {
 	case CAddr:
-		fprintf(f, "\tmove.l %s, ", rn);
+		fprintf(f, "\tmove.l ");
 		emitaddr(c, f);
-		fputc('\n', f);
+		fprintf(f, ", %s\n", rn);
 		break;
 	case CBits:
 		n = c->bits.i;
 		if (!w)
 			n = (int32_t)n;
-		fprintf(f, "\tmove %s, %"PRIu64"\n", rn, n);
+		fprintf(f, "\tmove.%s #%"PRIu64", %s\n", clsstr[k], n, rn);
 		break;
 	default:
 		die("invalid constant");
-	}
-}
-
-static void
-fixslot(Ref *pr, Fn *fn, FILE *f)
-{
-	Ref r;
-	int64_t s;
-
-	r = *pr;
-	if (rtype(r) == RSlot) {
-		s = slot(r.val, fn);
-		if (s < -2048 || s > 2047) {
-			fprintf(f, "\tli d7, %"PRId64"\n", s);
-			fprintf(f, "\tadd d7, fp, d7\n");
-			*pr = TMP(D7);
-		}
 	}
 }
 
@@ -337,10 +320,6 @@ emitins(Ins *i, Fn *fn, FILE *f)
 
 	switch (i->op) {
 	default:
-		if (isload(i->op))
-			fixslot(&i->arg[0], fn, f);
-		else if (isstore(i->op))
-			fixslot(&i->arg[1], fn, f);
 		/* fallthrough */
 	Table:
 		/* most instructions are just pulled out of
@@ -378,7 +357,6 @@ emitins(Ins *i, Fn *fn, FILE *f)
 				case Ks: i->op = Ostores; break;
 				case Kd: i->op = Ostored; break;
 				}
-				fixslot(&i->arg[1], fn, f);
 				goto Table;
 			}
 			break;
@@ -390,7 +368,6 @@ emitins(Ins *i, Fn *fn, FILE *f)
 			break;
 		case RSlot:
 			i->op = Oload;
-			fixslot(&i->arg[0], fn, f);
 			goto Table;
 		default:
 			assert(isreg(i->arg[0]));
@@ -481,10 +458,10 @@ m68k_emitfn(Fn *fn, FILE *f)
 	for (pr=m68k_rclob, off=0; *pr>=0; pr++) {
 		if (fn->reg & BIT(*pr)) {
 			fprintf(f,
-				"\tmove.l %d(sp), %s,\n",
-				off, rname[*pr]
+				"\tmove.l %s, %d(sp)\n",
+				rname[*pr], off
 			);
-			off += 8;
+			off += 4;
 		}
 	}
 
@@ -512,8 +489,8 @@ m68k_emitfn(Fn *fn, FILE *f)
 			for (pr=m68k_rclob, off=0; *pr>=0; pr++) {
 				if (fn->reg & BIT(*pr)) {
 					fprintf(f,
-						"\tmove.l %s, %d(sp)\n",
-						rname[*pr], off
+						"\tmove.l %d(sp), %s\n",
+						off, rname[*pr]
 					);
 					off += 8;
 				}
@@ -537,7 +514,7 @@ m68k_emitfn(Fn *fn, FILE *f)
 			}
 			assert(isreg(b->jmp.arg));
 			fprintf(f, "\ttst    %s\n", rname[b->jmp.arg.val]);
-			fprintf(f, "\tb%s    .L%d\n", neg ? "ne" : "eq", id0+b->s2->id);
+			fprintf(f, "\tb%s    .L%d\n", neg ? "eq" : "ne", id0+b->s2->id);
 			goto Jmp;
 		}
 	}
