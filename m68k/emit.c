@@ -123,9 +123,9 @@ slot(int s, Fn *fn)
 	s = ((int32_t)s << 3) >> 3;
 	assert(s <= fn->slot);
 	if (s < 0)
-		return 4 + (-s * 4);
+		return 8 + (-s * 4);
 	else
-		return 4 + (-4 * (fn->slot - s));
+		return 8 + (-4 * (fn->slot - s));
 }
 
 static void
@@ -219,11 +219,6 @@ emitf(char *s, Ins *i, Fn *fn, FILE *f)
 		switch ((c = *s++)) {
 		default:
 			die("invalid escape");
-		case '?':
-			if (KBASE(k) == 0)
-				fputs("t6", f);
-			else
-				abort();
 			break;
 		case 'k':
 			fputs(clsstr[i->cls], f);
@@ -278,7 +273,7 @@ emitf(char *s, Ins *i, Fn *fn, FILE *f)
 				break;
 			case RSlot:
 				offset = slot(r.val, fn);
-				fprintf(f, "%d(sp)", (int)offset);
+				fprintf(f, "%d(fp)", (int)offset);
 				break;
 			}
 			break;
@@ -448,12 +443,14 @@ m68k_emitfn(Fn *fn, FILE *f)
 			);
 	}
 
-	int frame = (16 + 4 * fn->slot + 15) & ~15;
+	int frame = (4 * fn->slot + 2) & ~2;
 	for (pr=m68k_rclob; *pr>=0; pr++) {
 		if (fn->reg & BIT(*pr))
-			frame += 8;
+			frame += 4;
 	}
-	frame = (frame + 15) & ~15;
+	frame = (frame + 2) & ~2;
+
+	fprintf(f, "\tlink   fp, #-%d\n", frame);
 
 	for (pr=m68k_rclob, off=0; *pr>=0; pr++) {
 		if (fn->reg & BIT(*pr)) {
@@ -489,18 +486,19 @@ m68k_emitfn(Fn *fn, FILE *f)
 			for (pr=m68k_rclob, off=0; *pr>=0; pr++) {
 				if (fn->reg & BIT(*pr)) {
 					fprintf(f,
-						"\tmove.l %d(sp), %s\n",
+						"\tmove.l %d(fp), %s\n",
 						off, rname[*pr]
 					);
 					off += 8;
 				}
 			}
+			fprintf(f, "\tunlk   fp\n");
 			fprintf(f, "\trts\n");
 			break;
 		case Jjmp:
 		Jmp:
 			if (b->s1 != b->link)
-				fprintf(f, "\tjmp .L%d\n", id0+b->s1->id);
+				fprintf(f, "\tjmp   .L%d\n", id0+b->s1->id);
 			else
 				lbl = 0;
 			break;
