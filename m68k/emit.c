@@ -72,25 +72,26 @@ static struct {
 
 	{ Ocopysr, Ki, "move.%k  sr,  %=" },
 	{ Ostoreb, Kw, "move.l %1, a0\n\tmove.b %0,  (a0)" },
-	{ Ostoreh, Kw, "move.l %1, a0\n\tmove.b %0,  (a0)" },
-	{ Ostorew, Kw, "move.l %1, a0\n\tmove.w %0,  (a0)" },
-	{ Ostorel, Ki, "move.l %1, a0\n\tmove.l %0,  (a0)" },
+	{ Ostoreh, Kw, "move.l %1, a0\n\tmove.w %0,  (a0)" },
+	{ Ostorew, Kw, "move.l %1, a0\n\tmove.l %0,  (a0)" },
+	//{ Ostorel, Ki, "move.l %1, a0\n\tmove.l %0,  (a0)" },
 	{ Oloadsb, Ki, "move.b %M0, %=" },
 	{ Oloadub, Ki, "move.b %M0, %=" },
-	{ Oloadsh, Ki, "move.b %M0, %=" },
-	{ Oloaduh, Ki, "move.b %M0, %=" },
-	{ Oloadsw, Ki, "move.w %M0, %=" },
-	{ Oloaduw, Ki, "move.w %M0, %=" },
-	{ Oload,   Kw, "move.w %M0, %=" },
-	{ Oload,   Kl, "move.l %M0, %=" },
+	{ Oloadsh, Ki, "move.w %M0, %=" },
+	{ Oloaduh, Ki, "move.w %M0, %=" },
+	{ Oloadsw, Ki, "move.l %M0, %=" },
+	{ Oloaduw, Ki, "move.l %M0, %=" },
+	{ Oload,   Kw, "move.l %M0, %=" },
+	//{ Oload,   Kl, "move.BUG %M0, %=" },
 	{ Oextsb,  Ki, "*ext.w  %=" },
 	{ Oextub,  Ki, "*ext.w  %=" },
 	{ Oextsh,  Ki, "*ext.w  %=" },
 	{ Oextuh,  Ki, "*ext.w  %=" },
-	{ Oextsw,  Kl, "*ext.w  %=" },
-	{ Oextuw,  Kl, "*ext.w  %=" },
+	//{ Oextsw,  Kl, "*ext.w  %=" },
+	//{ Oextuw,  Kl, "*ext.w  %=" },
 	{ Ocopy,   Ki, "move.%k  %0, %=" },
-	{ Oswap,   Kl, "exg.l    %0" },
+	{ Oswap,   Kw, "exg.l    %0" },
+	//{ Oswap,   Kl, "exg.l    %0" },
 	{ Oreqz,   Ki, "seqz %=, %0" },
 	{ Ornez,   Ki, "snez %=, %0" },
 	{ Ocall,   Kw, "bsr      %0" },
@@ -100,8 +101,8 @@ static struct {
 };
 
 static char *clsstr[] = {
-	[Kw] = "w",
-	[Kl] = "l",
+	[Kw] = "l",
+	[Kl] = "BUG",
 	[Ks] = "BUG",
 	[Kd] = "BUG",
 };
@@ -196,7 +197,7 @@ static void
 emitf(char *s, Ins *i, Fn *fn, FILE *f)
 {
 	Ref r;
-	int k, c;
+	int c;
 	Con *pc;
 	int64_t offset;
 
@@ -209,7 +210,6 @@ emitf(char *s, Ins *i, Fn *fn, FILE *f)
 
 	fputc('\t', f);
 	for (;;) {
-		k = i->cls;
 		while ((c = *s++) != '%')
 			if (!c) {
 				fputc('\n', f);
@@ -348,7 +348,8 @@ emitins(Ins *i, Fn *fn, FILE *f)
 				i->to = R;
 				switch (i->cls) {
 				case Kw: i->op = Ostorew; break;
-				case Kl: i->op = Ostorel; break;
+				//case Kl: i->op = Ostorel; break;
+				case Kl: die("64-bit stuff unimplemented"); break;
 				case Ks: i->op = Ostores; break;
 				case Kd: i->op = Ostored; break;
 				}

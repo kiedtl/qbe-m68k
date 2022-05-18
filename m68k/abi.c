@@ -479,14 +479,14 @@ selpar(Fn *fn, Ins *i0, Ins *i1)
 				emit(Ocopy, c->cls[j], *t++, r, R);
 			}
 			if (c->class & Cstk2) {
-				emit(Oload, Kl, *t, SLOT(-s), R);
+				emit(Oload, Kw, *t, SLOT(-s), R);
 				t++, s++;
 			}
 		} else if (c->class & Cstk1) {
 			//emit(Oload, *c->cls, i->to, SLOT(-s), R);
 
 			/* Parameters are always aligned to 32-bit boundaries. */
-			emit(Oload, Kl, i->to, SLOT(-s), R);
+			emit(Oload, Kw, i->to, SLOT(-s), R);
 			s++;
 		} else {
 			emit(Ocopy, *c->cls, i->to, TMP(*c->reg), R);

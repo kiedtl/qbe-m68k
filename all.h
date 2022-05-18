@@ -193,18 +193,9 @@ enum K {
 
 #define KWIDE(k) ((k) == Kl || (k) == Kd)
 #define KBASE(k) ((k) == Ks || (k) == Kd)
+#define KUSIZE   (T.wordsize == 64 ? Kl : Kw)
 
 #define K_ISINT(k) ((k) == Ks || (k) == Kd)
-
-#define KW_SZ (T.wordsize == 64 ? 4 : 2)
-#define KL_SZ (T.wordsize == 64 ? 8 : 4)
-#define KS_SZ (T.wordsize == 64 ? 4 : 2)
-#define KD_SZ (T.wordsize == 64 ? 8 : 4)
-
-#define KW_BITS (KW_SZ << 3) /* KW_SZ * 8 */
-#define KL_BITS (KL_SZ << 3) /* KL_SZ * 8 */
-#define KS_BITS (KS_SZ << 3) /* KS_SZ * 8 */
-#define KD_BITS (KD_SZ << 3) /* KD_SZ * 8 */
 
 struct Op {
 	char *name;

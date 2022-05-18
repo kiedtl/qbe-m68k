@@ -1,7 +1,7 @@
-unsigned long
-loop(unsigned long i)
+unsigned
+loop(unsigned i)
 {
-	unsigned long x;
+	unsigned x;
 	for (; x < i; ++x);
 	return x;
 }

@@ -421,13 +421,13 @@ blit(Ref rdst, uint doff, Ref rsrc, uint boff, uint sz, Fn *fn)
 
 	for (p=tbl; sz; p++) {
 		for (uint s=p->size; sz>=s; sz-=s, doff+=s, boff+=s) {
-			Ref r = newtmp("blt", Kl, fn);
-			r1 = newtmp("blt", Kl, fn);
+			Ref r = newtmp("blt", KUSIZE, fn);
+			r1 = newtmp("blt", KUSIZE, fn);
 			emit(p->st, 0, R, r, r1);
-			emit(Oadd, Kl, r1, rdst, getcon(doff, fn));
-			r1 = newtmp("blt", Kl, fn);
+			emit(Oadd, KUSIZE, r1, rdst, getcon(doff, fn));
+			r1 = newtmp("blt", KUSIZE, fn);
 			emit(p->ld, p->cls, r, r1, R);
-			emit(Oadd, Kl, r1, rsrc, getcon(boff, fn));
+			emit(Oadd, KUSIZE, r1, rsrc, getcon(boff, fn));
 		}
 	}
 }
@@ -459,9 +459,9 @@ salloc(Ref rt, Ref rs, Fn *fn)
 		/* r0 = (r + 15) & -16 */
 		r0 = newtmp("isel", Kl, fn);
 		r1 = newtmp("isel", Kl, fn);
-		emit(Osalloc, Kl, rt, r0, R);
-		emit(Oand, Kl, r0, r1, getcon(-16, fn));
-		emit(Oadd, Kl, r1, rs, getcon(15, fn));
+		emit(Osalloc, KUSIZE, rt, r0, R);
+		emit(Oand, KUSIZE, r0, r1, getcon(-16, fn));
+		emit(Oadd, KUSIZE, r1, rs, getcon(15, fn));
 		if (fn->tmp[rs.val].slot != -1)
 			err("unlikely alloc argument %%%s for %%%s",
 				fn->tmp[rs.val].name, fn->tmp[rt.val].name);

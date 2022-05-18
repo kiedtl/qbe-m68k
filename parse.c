@@ -4,7 +4,7 @@
 
 enum Kext {
 	Ke = -2,         /* Erroneous mode */
-	Km = Kl,         /* Memory pointer */
+	Km = -3,         /* Memory pointer */
 	Kagg = K_END,    /* Aggregate type */
 };
 
@@ -700,8 +700,10 @@ Ins:
 static int
 usecheck(Ref r, int k, Fn *fn)
 {
-	return rtype(r) != RTmp || fn->tmp[r.val].cls == k
-		|| (fn->tmp[r.val].cls == Kl && k == Kw);
+	const a_k = k == Km ? KUSIZE : k;
+	return rtype(r) != RTmp || fn->tmp[r.val].cls == a_k
+		|| (a_k == Km && fn->tmp[r.val].cls == KUSIZE)
+		|| (a_k == Kw && fn->tmp[r.val].cls == Kl);
 }
 
 static void
@@ -769,7 +771,7 @@ typecheck(Fn *fn)
 						n == 1 ? "second" : "first",
 						optab[i->op].name);
 				if (!usecheck(r, k, fn))
-					err("invalid type for %s operand %%%s in %s",
+					err("invalid type for %s operand %%%s in %s (icls=%d)",
 						n == 1 ? "second" : "first",
 						t->name, optab[i->op].name);
 			}
@@ -861,12 +863,12 @@ parsefields(Field *fld, Typ *ty, int t)
 		ty1 = 0;
 		switch (t) {
 		default: err("invalid type member specifier");
-		case Td: type = Fd; s =    KD_SZ; a = KL_SZ == 8 ? 3 : 2; break;
-		case Tl: type = Fl; s =    KL_SZ; a = KL_SZ == 8 ? 3 : 2; break;
-		case Ts: type = Fs; s =    KS_SZ; a = KL_SZ == 8 ? 2 : 1; break;
-		case Tw: type = Fw; s =    KW_SZ; a = KL_SZ == 8 ? 2 : 1; break;
-		case Th: type = Fh; s = KW_SZ>>2; a = KL_SZ == 8 ? 1 : 0; break;
-		case Tb: type = Fb; s =        1; a = KL_SZ == 8 ? 0 : 0; break;
+		case Td: type = Fd; s = 8; a = 3; break;
+		case Tl: type = Fl; s = 8; a = 3; break;
+		case Ts: type = Fs; s = 4; a = 2; break;
+		case Tw: type = Fw; s = 4; a = 2; break;
+		case Th: type = Fh; s = 2; a = 1; break;
+		case Tb: type = Fb; s = 1; a = 0; break;
 		case Ttyp:
 			type = FTyp;
 			ty1 = &typ[findtyp(ntyp-1)];
