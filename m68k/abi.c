@@ -6,11 +6,8 @@ typedef struct Insl Insl;
 typedef struct Params Params;
 
 enum {
-	Cptr  = 1, /* replaced by a pointer */
-	Cstk1 = 2, /* pass first XLEN on the stack */
-	Cstk2 = 4, /* pass second XLEN on the stack */
-	Cstk = Cstk1 | Cstk2,
-	Cfpint = 8, /* float passed like integer */
+	Cstk = 1, /* passed on the stack */
+	Cptr = 2, /* replaced by a pointer */
 };
 
 struct Class {
@@ -399,12 +396,9 @@ selcall(Fn *fn, Ins *i0, Ins *i1, Insl **ilp)
 			emit(Opush, 0, R, i->arg[0], R);
 			off += 4;
 		} else if (i->op == Oargc) {
-			if (c->class & Cstk1) {
+			/* TODO */
+			if (c->class & Cstk) {
 				blit(r, off, i->arg[1], 0, 8, fn);
-				off += 4;
-			}
-			if (c->class & Cstk2) {
-				blit(r, off, i->arg[1], 8, 8, fn);
 				off += 4;
 			}
 		}
@@ -439,24 +433,25 @@ selpar(Fn *fn, Ins *i0, Ins *i1)
 	il = 0;
 	t = tmp;
 	for (i=i0, c=ca; i<i1; i++, c++) {
-		if (c->class & Cfpint) {
-			r = i->to;
-			k = *c->cls;
-			*c->cls = KWIDE(k) ? Kl : Kw;
-			i->to = newtmp("abi", k, fn);
-			emit(Ocast, k, r, i->to, R);
-		}
+		/* if (c->class & Cfpint) { */
+		/* 	r = i->to; */
+		/* 	k = *c->cls; */
+		/* 	*c->cls = KWIDE(k) ? Kl : Kw; */
+		/* 	i->to = newtmp("abi", k, fn); */
+		/* 	emit(Ocast, k, r, i->to, R); */
+		/* } */
 
 		if (i->op == Oparc
 		&& !(c->class & Cptr)
 		&& c->nreg != 0) {
 			nt = c->nreg;
-			if (c->class & Cstk2) {
-				c->cls[1] = Kl;
-				c->off[1] = 8;
-				assert(nt == 1);
-				nt = 2;
-			}
+			// TODO
+			/* if (c->class & Cstk2) { */
+			/* 	c->cls[1] = Kl; */
+			/* 	c->off[1] = 8; */
+			/* 	assert(nt == 1); */
+			/* 	nt = 2; */
+			/* } */
 			sttmps(t, nt, c, i->to, fn);
 			stkblob(i->to, c->type, fn, &il);
 			t += nt;
@@ -471,18 +466,14 @@ selpar(Fn *fn, Ins *i0, Ins *i1)
 		if (i->op == Oparc && !(c->class & Cptr)) {
 			if (c->nreg == 0) {
 				fn->tmp[i->to.val].slot = -s;
-				s += (c->class & Cstk2) ? 2 : 1;
+				++s;
 				continue;
 			}
 			for (j=0; j < c->nreg; j++) {
 				r = TMP(c->reg[j]);
 				emit(Ocopy, c->cls[j], *t++, r, R);
 			}
-			if (c->class & Cstk2) {
-				emit(Oload, Kw, *t, SLOT(-s), R);
-				t++, s++;
-			}
-		} else if (c->class & Cstk1) {
+		} else if (c->class & Cstk) {
 			//emit(Oload, *c->cls, i->to, SLOT(-s), R);
 
 			/* Parameters are always aligned to 32-bit boundaries. */

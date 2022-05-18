@@ -48,16 +48,16 @@ static struct {
 	 * Note, scc/scs is used instead of shs/slo because some
 	 * asms (e.g. vasm) don't support those alternative menmonics.
 	 */
-	{ Oceqw,   Ki, "seq.b  %="     },
-	{ Ocnew,   Ki, "sne.b  %="     },
-	{ Ocsgew,  Ki, "sge.b  %="     },
-	{ Ocsgtw,  Ki, "sgt.b  %="     },
-	{ Ocslew,  Ki, "sle.b  %="     },
-	{ Ocsltw,  Ki, "slt.b  %="     },
-	{ Ocugew,  Ki, "scc.b  %="     },
-	{ Ocugtw,  Ki, "shi.b  %="     },
-	{ Oculew,  Ki, "sls.b  %="     },
-	{ Ocultw,  Ki, "scs.b  %="     },
+	{ Oceqw,   Ki, "cmp.%k  %0, %1\n\tseq.b  %="     },
+	{ Ocnew,   Ki, "cmp.%k  %0, %1\n\tsne.b  %="     },
+	{ Ocsgew,  Ki, "cmp.%k  %0, %1\n\tsge.b  %="     },
+	{ Ocsgtw,  Ki, "cmp.%k  %0, %1\n\tsgt.b  %="     },
+	{ Ocslew,  Ki, "cmp.%k  %1, %0\n\tsle.b  %="     },
+	{ Ocsltw,  Ki, "cmp.%k  %1, %0\n\tslt.b  %="     },
+	{ Ocugew,  Ki, "cmp.%k  %1, %0\n\tscc.b  %="     },
+	{ Ocugtw,  Ki, "cmp.%k  %1, %0\n\tshi.b  %="     },
+	{ Oculew,  Ki, "cmp.%k  %1, %0\n\tsls.b  %="     },
+	{ Ocultw,  Ki, "cmp.%k  %1, %0\n\tscs.b  %="     },
 	/* Long versions */
 	{ Oceql,   Ki, "seq.b  %="     },
 	{ Ocnel,   Ki, "sne.b  %="     },
@@ -74,6 +74,9 @@ static struct {
 	{ Ostoreb, Kw, "move.l %1, a0\n\tmove.b %0,  (a0)" },
 	{ Ostoreh, Kw, "move.l %1, a0\n\tmove.w %0,  (a0)" },
 	{ Ostorew, Kw, "move.l %1, a0\n\tmove.l %0,  (a0)" },
+	/* { Ostoreb, Kw, "move.w %0, %M1" }, */
+	/* { Ostoreh, Kw, "move.w %0, %M1" }, */
+	/* { Ostorew, Kw, "move.w %0, %M1" }, */
 	//{ Ostorel, Ki, "move.l %1, a0\n\tmove.l %0,  (a0)" },
 	{ Oloadsb, Ki, "move.b %M0, %=" },
 	{ Oloadub, Ki, "move.b %M0, %=" },
@@ -82,7 +85,7 @@ static struct {
 	{ Oloadsw, Ki, "move.l %M0, %=" },
 	{ Oloaduw, Ki, "move.l %M0, %=" },
 	{ Oload,   Kw, "move.l %M0, %=" },
-	//{ Oload,   Kl, "move.BUG %M0, %=" },
+	{ Oload,   Kl, "move.BUG %M0, %=" },
 	{ Oextsb,  Ki, "*ext.w  %=" },
 	{ Oextub,  Ki, "*ext.w  %=" },
 	{ Oextsh,  Ki, "*ext.w  %=" },
@@ -513,7 +516,7 @@ m68k_emitfn(Fn *fn, FILE *f)
 			}
 			assert(isreg(b->jmp.arg));
 			fprintf(f, "\ttst    %s\n", rname[b->jmp.arg.val]);
-			fprintf(f, "\tb%s    .L%d\n", neg ? "eq" : "ne", id0+b->s2->id);
+			fprintf(f, "\tb%s    .L%d\n", neg ? "ne" : "eq", id0+b->s2->id);
 			goto Jmp;
 		}
 	}

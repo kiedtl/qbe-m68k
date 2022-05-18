@@ -30,9 +30,7 @@ selcmp(Ins i, int k, int op, Fn *fn)
 	 *
 	 * TODO: check if this is really necessary.
 	 */
-	//emit(Oand, i.cls, i.to, i.to, getcon(1, fn));
-
-	emit(i.op, Kw, i.to, R, R);
+	emit(Oand, i.cls, i.to, i.to, getcon(1, fn));
 
 	/* cmp doesn't like immediates as the second operand */
 	if (rtype(i.arg[1]) == RCon)
@@ -42,7 +40,8 @@ selcmp(Ins i, int k, int op, Fn *fn)
 		i.arg[1] = tmp;
 	}
 
-	emit(Oxcmp, i.cls, R, i.arg[0], i.arg[1]);
+	emit(i.op, Kw, i.to, i.arg[0], i.arg[1]);
+	//emit(Oxcmp, i.cls, R, i.arg[0], i.arg[1]);
 }
 
 static void
