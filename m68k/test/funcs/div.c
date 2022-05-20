@@ -1,16 +1,25 @@
-//: 	.globl main
-//: main:
+//: .macro M_DIVMODU32 dvd dvs
 //: 	move.l  #0, -(a7)
-//: 	move.l  #7, -(a7)
-//: 	move.l  #21, -(a7)
+//: 	move.l  #\dvs, -(a7)
+//: 	move.l  #\dvd, -(a7)
 //: 	bsr     __divmodu32
 //: 	add.w   #12,a7
 //: 	move.l  #0x1, 0x200000
+//: .endm
+//:
+//: 	.globl main
+//: main:
+//:
+//: 	M_DIVMODU32    21   7
+//: 	M_DIVMODU32    10   2
+//: 	M_DIVMODU32    21 342
+//: 	M_DIVMODU32     1   1
+//: 	M_DIVMODU32 0xFFF  24
 //:
 //: 	rts
 
 //$ expect_output=""
-//$ expect_D0="3"
+//$ expect_D0="3 5 0 1 170"
 
 #include "libqbe.h"
 
