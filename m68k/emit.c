@@ -71,20 +71,35 @@ static struct {
 	{ Ocultl,  Ki, "scs.b  %="     },
 
 	{ Ocopysr, Ki, "move.%k  sr,  %=" },
-	{ Ostoreb, Kw, "move.l %1, a0\n\tmove.b %0,  (a0)" },
-	{ Ostoreh, Kw, "move.l %1, a0\n\tmove.w %0,  (a0)" },
-	{ Ostorew, Kw, "move.l %1, a0\n\tmove.l %0,  (a0)" },
+	{ Ostoreb, Kw, "move.l %1, a0\n\tmove.b %0, (a0)" },
+	{ Ostoreh, Kw, "move.l %1, a0\n\tmove.w %0, (a0)" },
+	{ Ostorew, Kw, "move.l %1, a0\n\tmove.l %0, (a0)" },
+
 	/* { Ostoreb, Kw, "move.w %0, %M1" }, */
 	/* { Ostoreh, Kw, "move.w %0, %M1" }, */
 	/* { Ostorew, Kw, "move.w %0, %M1" }, */
 	//{ Ostorel, Ki, "move.l %1, a0\n\tmove.l %0,  (a0)" },
-	{ Oloadsb, Ki, "move.b %M0, %=" },
-	{ Oloadub, Ki, "move.b %M0, %=" },
-	{ Oloadsh, Ki, "move.w %M0, %=" },
-	{ Oloaduh, Ki, "move.w %M0, %=" },
-	{ Oloadsw, Ki, "move.l %M0, %=" },
-	{ Oloaduw, Ki, "move.l %M0, %=" },
-	{ Oload,   Kw, "move.l %M0, %=" },
+
+	/* { Oloadsb, Ki, "move.b %M0, %=" }, */
+	/* { Oloadub, Ki, "move.b %M0, %=" }, */
+	/* { Oloadsh, Ki, "move.w %M0, %=" }, */
+	/* { Oloaduh, Ki, "move.w %M0, %=" }, */
+	/* { Oloadsw, Ki, "move.l %M0, %=" }, */
+	/* { Oloaduw, Ki, "move.l %M0, %=" }, */
+	/* { Oload,   Kw, "move.l %M0, %=" }, */
+
+	/*
+	 * Load instructions expect a0 to have been loaded with %M0
+	 * (See below.)
+	 */
+	{ Oloadsb, Ki, "move.b (a0), %=" },
+	{ Oloadub, Ki, "move.b (a0), %=" },
+	{ Oloadsh, Ki, "move.w (a0), %=" },
+	{ Oloaduh, Ki, "move.w (a0), %=" },
+	{ Oloadsw, Ki, "move.l (a0), %=" },
+	{ Oloaduw, Ki, "move.l (a0), %=" },
+	{ Oload,   Kw, "move.l (a0), %=" },
+
 	{ Oload,   Kl, "move.BUG %M0, %=" },
 	{ Oextsb,  Ki, "*ext.w  %=" },
 	{ Oextub,  Ki, "*ext.w  %=" },
@@ -237,7 +252,7 @@ emitf(char *s, Ins *i, Fn *fn, FILE *f)
 			}
 			switch (rtype(r)) {
 			default:
-				die("invalid second argument");
+				die("invalid argument (arg %c)", c);
 			case RTmp:
 				if (c == '=')
 					assert(isreg(r));
@@ -389,6 +404,30 @@ emitins(Ins *i, Fn *fn, FILE *f)
 		default:
 		invalid:
 			die("invalid call argument");
+		}
+		break;
+	case Oloadsb: case Oloadub:
+	case Oloadsh: case Oloaduh:
+	case Oloadsw: case Oloaduw:
+	case Oload:
+		switch (rtype(i->arg[0])) {
+		default:
+			die("invalid address argument");
+		case RTmp:
+			fprintf(f, "\tmove.l %s, a0\n", rname[i->arg[0].val]);
+			goto Table;
+			break;
+		case RCon:
+			;
+			Con *pc = &fn->con[i->arg[0].val];
+			assert(pc->type == CAddr);
+			fprintf(f, "\tmove.l ");
+			emitaddr(pc, f);
+			fprintf(f, ", a0\n");
+			break;
+		case RSlot:
+			emitf("move.l %M0, %=", i, fn, f);
+			break;
 		}
 		break;
 	case Odiv: case Oudiv:
