@@ -1,3 +1,17 @@
+//: 	.globl main
+//: main:
+//: 	move.l  #0, -(a7)
+//: 	move.l  #7, -(a7)
+//: 	move.l  #21, -(a7)
+//: 	bsr     __divmodu32
+//: 	add.w   #12,a7
+//: 	move.l  #0x1, 0x200000
+//:
+//: 	rts
+
+//$ expect_output=""
+//$ expect_D0="3"
+
 #include "libqbe.h"
 
 u32

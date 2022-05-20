@@ -429,7 +429,7 @@ void
 m68k_emitfn(Fn *fn, FILE *f)
 {
 	static int id0;
-	int lbl, neg, off, *pr, r;
+	int lbl, neg, *pr, r;
 	Blk *b, *s;
 	Ins *i;
 
@@ -456,6 +456,7 @@ m68k_emitfn(Fn *fn, FILE *f)
 
 	fprintf(f, "\tlink   fp, #-%d\n", frame);
 
+	int off;
 	for (pr=m68k_rclob, off=0; *pr>=0; pr++) {
 		if (fn->reg & BIT(*pr)) {
 			fprintf(f,
@@ -490,10 +491,10 @@ m68k_emitfn(Fn *fn, FILE *f)
 			for (pr=m68k_rclob, off=0; *pr>=0; pr++) {
 				if (fn->reg & BIT(*pr)) {
 					fprintf(f,
-						"\tmove.l %d(fp), %s\n",
+						"\tmove.l %d(sp), %s\n",
 						off, rname[*pr]
 					);
-					off += 8;
+					off += 4;
 				}
 			}
 			fprintf(f, "\tunlk   fp\n");

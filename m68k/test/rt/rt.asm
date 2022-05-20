@@ -60,7 +60,8 @@ _rt_begin:
 
 	bsr main
 
-	stop    #27000
+	move.l  #1, 0x100000               ; shutdown emulator
+	stop    #0xffff
 
 
 	; Default entry point. Print hello world and exit.
