@@ -5,16 +5,19 @@
 - Pass that deals w/ 64-bit temporaries by transforming them into pairs of
   32-bit temporaries
 
-- Figure out if frame pointer & friends (link, unlk) are needed, and add them
-  back in if that's the case.
-  - Would need to update rt/rt.asm
+
+- Optimizations:
+  - Use `moveq`/`addq`/`subq` where applicable
+  - Use builtin mul where possible
+  - Use builtin div where possible
+  - Use `movem` to save/load registers when entering/leaving a subroutine
 
 
 Roadmap
 -------
 
 x Get a hello world working
-- div.c
+x div.c
 - putul.c
 - collatz.c
 - knight.c
