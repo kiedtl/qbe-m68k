@@ -1,10 +1,10 @@
-//:	.align 2
+//: 	.align 2
 //: S1: .string "Hello, world!"
-//:	.align 2
+//: 	.align 2
 //: S2: .string ""
-//:	.align 2
+//: 	.align 2
 //: S3: .string "Vermin Supreme 2024!"
-//:	.align 2
+//: 	.align 2
 //: S4: .string "\0\0\0"
 //:
 //: .macro M_STRLEN str

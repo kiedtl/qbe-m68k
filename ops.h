@@ -144,7 +144,6 @@ O(afcmp,   T(e,e,s,d, e,e,s,d), 0) X(0, 0, 0) V(0)
 O(reqz,    T(w,l,e,e, x,x,e,e), 0) X(0, 0, 0) V(0)
 O(rnez,    T(w,l,e,e, x,x,e,e), 0) X(0, 0, 0) V(0)
 O(push,    T(w,e,e,e, x,x,x,x), 0) X(0, 0, 0) V(0) /* m68k */
-O(copysr,  T(w,e,e,e, x,x,x,x), 0) X(0, 0, 0) V(0) /* m68k */
 O(seq,     T(w,e,e,e, x,x,x,x), 0) X(0, 0, 0) V(0) /* m68k */
 
 /* Arguments, Parameters, and Calls.

@@ -58,19 +58,7 @@ static struct {
 	{ Ocugtw,  Ki, "cmp.%k  %1, %0\n\tshi.b  %="     },
 	{ Oculew,  Ki, "cmp.%k  %1, %0\n\tsls.b  %="     },
 	{ Ocultw,  Ki, "cmp.%k  %1, %0\n\tscs.b  %="     },
-	/* Long versions */
-	{ Oceql,   Ki, "seq.b  %="     },
-	{ Ocnel,   Ki, "sne.b  %="     },
-	{ Ocsgel,  Ki, "sge.b  %="     },
-	{ Ocsgtl,  Ki, "sgt.b  %="     },
-	{ Ocslel,  Ki, "sle.b  %="     },
-	{ Ocsltl,  Ki, "slt.b  %="     },
-	{ Ocugel,  Ki, "scc.b  %="     },
-	{ Ocugtl,  Ki, "shi.b  %="     },
-	{ Oculel,  Ki, "sls.b  %="     },
-	{ Ocultl,  Ki, "scs.b  %="     },
 
-	{ Ocopysr, Ki, "move.%k  sr,  %=" },
 	{ Ostoreb, Kw, "move.l %1, a0\n\tmove.b %0, (a0)" },
 	{ Ostoreh, Kw, "move.l %1, a0\n\tmove.w %0, (a0)" },
 	{ Ostorew, Kw, "move.l %1, a0\n\tmove.l %0, (a0)" },
@@ -92,26 +80,23 @@ static struct {
 	 * Load instructions expect a0 to have been loaded with %M0
 	 * (See below.)
 	 */
-	{ Oloadsb, Ki, "move.b (a0), %=" },
-	{ Oloadub, Ki, "move.b (a0), %=" },
-	{ Oloadsh, Ki, "move.w (a0), %=" },
-	{ Oloaduh, Ki, "move.w (a0), %=" },
+	{ Oloadsb, Ki, "move.b (a0), %=\n\text.w  %=" },
+	{ Oloadub, Ki, "move.b (a0), %=\n\tandi.w #0xFF, %=" },
+	{ Oloadsh, Ki, "move.b (a0), %=\n\text.w  %=" },
+	{ Oloaduh, Ki, "move.b (a0), %=\n\tandi.w #0xFF, %=" },
 	{ Oloadsw, Ki, "move.l (a0), %=" },
 	{ Oloaduw, Ki, "move.l (a0), %=" },
 	{ Oload,   Kw, "move.l (a0), %=" },
 
-	{ Oload,   Kl, "move.BUG %M0, %=" },
+	{ Oload,   Kl, "[BUG] move.ll %M0, %=" },
 	{ Oextsb,  Ki, "*ext.w  %=" },
-	{ Oextub,  Ki, "*ext.w  %=" },
+	{ Oextub,  Ki, "*andi.w #0xFF, %=" },
 	{ Oextsh,  Ki, "*ext.w  %=" },
-	{ Oextuh,  Ki, "*ext.w  %=" },
-	//{ Oextsw,  Kl, "*ext.w  %=" },
-	//{ Oextuw,  Kl, "*ext.w  %=" },
+	{ Oextuh,  Ki, "*andi.w #0xFFFF, %=" }, /* TODO: use swap/clr/swap pattern */
+	{ Oextsw,  Kl, "[BUG] ext.w  %=" },
+	{ Oextuw,  Kl, "[BUG] ext.w  %=" },
 	{ Ocopy,   Ki, "move.%k  %0, %=" },
 	{ Oswap,   Kw, "exg.l    %0" },
-	//{ Oswap,   Kl, "exg.l    %0" },
-	{ Oreqz,   Ki, "seqz %=, %0" },
-	{ Ornez,   Ki, "snez %=, %0" },
 	{ Ocall,   Kw, "bsr      %0" },
 	{ Opush,   Ki, "move.%k  %0, -(sp)" },
 	{ Oaddr,   Ki, "+add     %0, %=" },
@@ -120,7 +105,7 @@ static struct {
 
 static char *clsstr[] = {
 	[Kw] = "l",
-	[Kl] = "BUG",
+	[Kl] = "ll",
 	[Ks] = "BUG",
 	[Kd] = "BUG",
 };
@@ -515,17 +500,7 @@ m68k_emitfn(Fn *fn, FILE *f)
 		switch (b->jmp.type) {
 		case Jret0:
 			if (fn->dynalloc) {
-				if (frame - 16 <= 2048)
-					fprintf(f,
-						"\tadd sp, fp, -%d\n",
-						frame - 16
-					);
-				else
-					fprintf(f,
-						"\tli t6, %d\n"
-						"\tsub sp, fp, t6\n",
-						frame - 16
-					);
+				/* TODO */
 			}
 			for (pr=m68k_rclob, off=0; *pr>=0; pr++) {
 				if (fn->reg & BIT(*pr)) {
@@ -542,7 +517,7 @@ m68k_emitfn(Fn *fn, FILE *f)
 		case Jjmp:
 		Jmp:
 			if (b->s1 != b->link)
-				fprintf(f, "\tjmp   .L%d\n", id0+b->s1->id);
+				fprintf(f, "\tbra   .L%d\n", id0+b->s1->id);
 			else
 				lbl = 0;
 			break;
@@ -554,8 +529,7 @@ m68k_emitfn(Fn *fn, FILE *f)
 				b->s2 = s;
 				neg = 1;
 			}
-			assert(isreg(b->jmp.arg));
-			fprintf(f, "\ttst    %s\n", rname[b->jmp.arg.val]);
+			fprintf(f, "\ttst     %s\n", rname[b->jmp.arg.val]);
 			fprintf(f, "\tb%s    .L%d\n", neg ? "ne" : "eq", id0+b->s2->id);
 			goto Jmp;
 		}

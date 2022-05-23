@@ -2,9 +2,16 @@
 #
 # Expects to be run from the m68k dir
 
+TEST_FUNCS=(
+    hello
+    loop
+    strlen
+    strcat
+    div
+)
+
 mkdir -p "test/funcs/obj"
 
-S_ERR="\x1b[31mNAH\x1b[m"
 ts() {
     chars=("-" "\\" "|" "/")
 
@@ -53,20 +60,15 @@ _vlink() {
     vlink -brawbin1 -evector_table -o "$bin" $@
 }
 
-for f in 'test/funcs/'*
+for name in ${TEST_FUNCS[*]}
 do
     # Reset variables that can be defined in the header of test funcs:
     expect_output=
     expect_D0=
 
-    # Skip obj dir
-    [ -d "$f" ] && continue
-
-    name="$(basename "$f")"
-    name="${name%%.*}"
-
     ts -1 "init"
 
+    src="test/funcs/${name}.c"
     ssa="test/funcs/obj/${name}.ssa"
     asm="test/funcs/obj/${name}.asm"
     obj="test/funcs/obj/${name}.o"
@@ -74,11 +76,11 @@ do
     harn_asm="test/funcs/obj/harness-${name}.asm"
     harn_obj="test/funcs/obj/harness-${name}.o"
 
-    eval $(grep '^//\$' $f | sed 's/^\/\/\$ //g')
+    eval $(grep '^//\$' $src | sed 's/^\/\/\$ //g')
 
-    grep '^//\:' $f | sed 's/^\/\/\:[ ]*//g' >| $harn_asm
+    grep '^//\:' $src | sed 's/^\/\/\:[ ]*//g' >| $harn_asm
 
-    ts 1 "cproc"   && (_cproc "$f"   "$ssa"                            || break)
+    ts 1 "cproc"   && (_cproc "$src" "$ssa"                            || break)
     ts 2 "qbe"     && (_qbe   "$ssa" "$asm"                            || break)
     ts 3 "vasm"    && (_vasm  "$asm" "$obj"                            || break)
     ts 4 "harness" && (_vasm  "$harn_asm" "$harn_obj"                  || break)
@@ -90,7 +92,7 @@ do
 
     if [[ "$expect_output" != "$stdout" ]]
     then
-        ts 0 $S_ERR
+        ts 0 NAH
         printf "Unexpected output (got: %q, expected: %q)\n\n" \
             "$stdout" "$expect_output"
     fi
@@ -99,11 +101,11 @@ do
     while read -r _ _ val _
     do
         actual_D0+=($val)
-    done <<< $(grep '^G D0' <<< "$stderr")
+    done <<< $(grep -a '^G D0' <<< "$stderr")
 
     if [[ "$expect_D0" != "${actual_D0[*]}" ]]
     then
-        ts 0 $S_ERR
+        ts 0 NAH
         printf "Unexpected D0 values (got: %q, expected: %q)\n\n" \
             "${actual_D0[*]}" "$expect_D0"
     fi
