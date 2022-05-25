@@ -31,7 +31,10 @@ static struct {
 	char *asm;
 } omap[] = {
 	{ Oadd,    Ki, "+add.%k  %1, %=" },
-	{ Osub,    Ki, "-sub.%k  %1, %=" },
+	/* FIXME: Osub: figure out why convins fails when it's marked as
+	 * non-commutative (as it should be); ie why the dest is sometimes %0.
+	 */
+	{ Osub,    Ki, "+sub.%k  %1, %=" },
 	{ Oneg,    Ki, "*neg.%k  %="     },
 	{ Odiv,    Ki, "-divs.%k %1, %=" },
 	{ Oudiv,   Ki, "-divu.%k %1, %=" },
@@ -189,6 +192,10 @@ convins(Fn *fn, Ins *i, char convmode, FILE *f)
 		}
 		/* fallthrough */
 	case '-': /* 3-address -> 2-address */
+		if (req(i->arg[1], i->to) && !req(i->arg[0], i->to)) {
+			err("ins=%d, char=%c\n", i->op, convmode);
+		}
+
 		assert((!req(i->arg[1], i->to) || req(i->arg[0], i->to)) &&
 			"cannot convert instruction to 2-address!");
 		emitcopy(i->to, i->arg[0], i->cls, fn, f);

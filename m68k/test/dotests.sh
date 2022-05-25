@@ -2,11 +2,15 @@
 #
 # Expects to be run from the m68k dir
 
+set -e
+
 TEST_FUNCS=(
     hello
     loop
     strlen
+    strcpy
     strcat
+    strcmp
     div
 )
 
@@ -80,11 +84,11 @@ do
 
     grep '^//\:' $src | sed 's/^\/\/\:[ ]*//g' >| $harn_asm
 
-    ts 1 "cproc"   && (_cproc "$src" "$ssa"                            || break)
-    ts 2 "qbe"     && (_qbe   "$ssa" "$asm"                            || break)
-    ts 3 "vasm"    && (_vasm  "$asm" "$obj"                            || break)
-    ts 4 "harness" && (_vasm  "$harn_asm" "$harn_obj"                  || break)
-    ts 5 "vlink"   && (_vlink "$bin" 'test/rt/rt.o' "$harn_obj" "$obj" || break)
+    ts 1 "cproc"   && _cproc "$src" "$ssa"
+    ts 2 "qbe"     && _qbe   "$ssa" "$asm"
+    ts 3 "vasm"    && _vasm  "$asm" "$obj"
+    ts 4 "harness" && _vasm  "$harn_asm" "$harn_obj"
+    ts 5 "vlink"   && _vlink "$bin" 'test/rt/rt.o' "$harn_obj" "$obj"
 
     stderr_file=$(mktemp)
     stdout=$(sim "$bin" 2> "$stderr_file")
