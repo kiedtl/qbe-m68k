@@ -76,7 +76,7 @@ fixarg(Ref *r, int k, Ins *i, Fn *fn)
 			r1 = newtmp("isel", k, fn);
 			emit(Oextsw, Kl, r1, r0, R);
 		} else {
-			assert(k == fn->tmp[r0.val].cls);
+			assert(knorm(k) == fn->tmp[r0.val].cls);
 		}
 		break;
 	}

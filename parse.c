@@ -4,7 +4,6 @@
 
 enum Kext {
 	Ke = -2,         /* Erroneous mode */
-	Km = -3,         /* Memory pointer */
 	Kagg = K_END,    /* Aggregate type */
 };
 
@@ -471,7 +470,7 @@ parserefl(int arg)
 			hasenv = 1;
 			env = 1;
 			next();
-			k = Kl;
+			k = KUSIZE;
 			break;
 		default:
 			env = 0;
@@ -485,9 +484,9 @@ parserefl(int arg)
 			err("invalid function parameter");
 		if (k == Kagg)
 			if (arg)
-				*curi = (Ins){Oargc, Kl, R, {TYPE(ty), r}};
+				*curi = (Ins){Oargc, KUSIZE, R, {TYPE(ty), r}};
 			else
-				*curi = (Ins){Oparc, Kl, r, {TYPE(ty)}};
+				*curi = (Ins){Oparc, KUSIZE, r, {TYPE(ty)}};
 		else if (env)
 			if (arg)
 				*curi = (Ins){Oarge, k, R, {r}};
@@ -634,7 +633,7 @@ DoOp:
 		op = Ocall;
 		expect(Tnl);
 		if (k == Kagg) {
-			k = Kl;
+			k = KUSIZE;
 			arg[1] = TYPE(ty);
 		} else
 			arg[1] = R;
@@ -741,6 +740,7 @@ typecheck(Fn *fn)
 			t = &fn->tmp[p->to.val];
 			for (n=0; n<p->narg; n++) {
 				k = t->cls;
+				assert(k != Km && k != Ke);
 				if (bshas(ppb, p->blk[n]->id))
 					err("multiple entries for @%s in phi %%%s",
 						p->blk[n]->name, t->name);

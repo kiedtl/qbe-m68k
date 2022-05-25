@@ -184,6 +184,7 @@ enum {
 
 enum K {
 	Kx = -1, /* "top" class (see usecheck() and clsmerge()) */
+	Km = -3, /* pointer, used only by parse.c and ops.h */
 	Kw = 0,
 	Kl = 1,
 	Ks = 2,
@@ -484,6 +485,12 @@ void parse(FILE *, char *, void (Dat *), void (Fn *));
 void printfn(Fn *, FILE *);
 void printref(Ref, Fn *, FILE *);
 void err(char *, ...) __attribute__((noreturn));
+
+static inline int
+knorm(int k)
+{
+	return k == Km ? KUSIZE : k;
+}
 
 /* cfg.c */
 Blk *blknew(void);
