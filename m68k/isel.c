@@ -35,12 +35,14 @@ selcmp(Ins i, int k, int op, Fn *fn)
 	/* cmp doesn't like immediates as the second operand */
 	if (rtype(i.arg[1]) == RCon)
 	if (fn->con[i.arg[1].val].type == CBits) {
-		Ref tmp = i.arg[0];
-		i.arg[0] = i.arg[1];
-		i.arg[1] = tmp;
+		Ref r1 = newtmp("isel", Kw, fn);
+		emit(i.op, i.cls, i.to, i.arg[0], r1);
+		emit(Ocopy, Kw, r1, i.arg[1], R);
+		return;
 	}
 
-	emit(i.op, Kw, i.to, i.arg[0], i.arg[1]);
+	emiti(i);
+
 	//emit(Oxcmp, i.cls, R, i.arg[0], i.arg[1]);
 }
 

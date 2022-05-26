@@ -31,36 +31,41 @@ static struct {
 	char *asm;
 } omap[] = {
 	{ Oadd,    Ki, "+add.%k  %1, %=" },
-	/* FIXME: Osub: figure out why convins fails when it's marked as
-	 * non-commutative (as it should be); ie why the dest is sometimes %0.
+	/* FIXME: Osub,Olsr,Olsl: figure out why convins fails when it's marked
+	 * as non-commutative (as it should be); ie why the dest is sometimes
+	 * %0. (convins() was copied over from amd64, so there's probably some
+	 * pass from amd64:isel.c that we missed...)
 	 */
 	{ Osub,    Ki, "+sub.%k  %1, %=" },
 	{ Oneg,    Ki, "*neg.%k  %="     },
-	{ Odiv,    Ki, "-divs.%k %1, %=" },
-	{ Oudiv,   Ki, "-divu.%k %1, %=" },
-	{ Omul,    Ki, "+muls.%k %1, %=" },
+	//{ Odiv,    Ki, "-divs.%k %1, %=" },
+	//{ Oudiv,   Ki, "-divu.%k %1, %=" },
+	//{ Omul,    Ki, "+muls.%k %1, %=" },
 	{ Oand,    Ki, "-and.%k  %1, %=" },
 	{ Oor,     Ki, "-or.%k   %1, %=" },
 	{ Oxor,    Ki, "-eor.%k  %1, %=" },
 	{ Osar,    Ki, "-asr.%k  %1, %=" },
-	{ Oshr,    Ki, "-lsr.%k  %1, %=" },
-	{ Oshl,    Ki, "-lsl.%k  %1, %=" },
+	{ Oshr,    Ki, "+lsr.%k  %1, %=" },
+	{ Oshl,    Ki, "+lsl.%k  %1, %=" },
 	{ Oxcmp,   Ki, "cmp.%k  %0, %1" },
 
 	/*
 	 * Note, scc/scs is used instead of shs/slo because some
 	 * asms (e.g. vasm) don't support those alternative menmonics.
+	 *
+	 * Ops marked `reverse` emit the opposite operation, since the
+	 * order of operands to `cmp` are *backward* for some reason.
 	 */
 	{ Oceqw,   Ki, "cmp.%k  %0, %1\n\tseq.b  %="     },
 	{ Ocnew,   Ki, "cmp.%k  %0, %1\n\tsne.b  %="     },
-	{ Ocsgew,  Ki, "cmp.%k  %0, %1\n\tsge.b  %="     },
-	{ Ocsgtw,  Ki, "cmp.%k  %0, %1\n\tsgt.b  %="     },
-	{ Ocslew,  Ki, "cmp.%k  %1, %0\n\tsle.b  %="     },
-	{ Ocsltw,  Ki, "cmp.%k  %1, %0\n\tslt.b  %="     },
-	{ Ocugew,  Ki, "cmp.%k  %1, %0\n\tscc.b  %="     },
-	{ Ocugtw,  Ki, "cmp.%k  %1, %0\n\tshi.b  %="     },
-	{ Oculew,  Ki, "cmp.%k  %1, %0\n\tsls.b  %="     },
-	{ Ocultw,  Ki, "cmp.%k  %1, %0\n\tscs.b  %="     },
+	{ Ocsgew,  Ki, "cmp.%k  %0, %1\n\tsle.b  %="     }, /* reverse (lt) */
+	{ Ocsgtw,  Ki, "cmp.%k  %0, %1\n\tslt.b  %="     }, /* reverse (le) */
+	{ Ocslew,  Ki, "cmp.%k  %0, %1\n\tsge.b  %="     }, /* reverse (ge) */
+	{ Ocsltw,  Ki, "cmp.%k  %0, %1\n\tsgt.b  %="     }, /* reverse (gt) */
+	{ Ocugew,  Ki, "cmp.%k  %0, %1\n\tsls.b  %="     }, /* reverse (le) */
+	{ Ocugtw,  Ki, "cmp.%k  %0, %1\n\tslo.b  %="     }, /* reverse (lt) */
+	{ Oculew,  Ki, "cmp.%k  %0, %1\n\tshs.b  %="     }, /* reverse (ge) */
+	{ Ocultw,  Ki, "cmp.%k  %0, %1\n\tshi.b  %="     }, /* reverse (gt) */
 
 	{ Ostoreb, Kw, "move.l %1, a0\n\tmove.b %0, (a0)" },
 	{ Ostoreh, Kw, "move.l %1, a0\n\tmove.w %0, (a0)" },
@@ -98,11 +103,11 @@ static struct {
 	{ Oextuh,  Ki, "*andi.w #0xFFFF, %=" }, /* TODO: use swap/clr/swap pattern */
 	{ Oextsw,  Kl, "[BUG] ext.w  %=" },
 	{ Oextuw,  Kl, "[BUG] ext.w  %=" },
-	{ Ocopy,   Ki, "move.%k  %0, %=" },
-	{ Oswap,   Kw, "exg.l    %0" },
-	{ Ocall,   Kw, "bsr      %0" },
-	{ Opush,   Ki, "move.%k  %0, -(sp)" },
-	{ Oaddr,   Ki, "+add     %0, %=" },
+	{ Ocopy,   Ki, "move.%k %0, %=" },
+	{ Oswap,   Kw, "exg.l   %0, %1" },
+	{ Ocall,   Kw, "bsr     %0" },
+	{ Opush,   Ki, "move.%k %0, -(sp)" },
+	{ Oaddr,   Ki, "+add    %1, %=" },
 	{ NOp, 0, 0 }
 };
 
@@ -192,10 +197,6 @@ convins(Fn *fn, Ins *i, char convmode, FILE *f)
 		}
 		/* fallthrough */
 	case '-': /* 3-address -> 2-address */
-		if (req(i->arg[1], i->to) && !req(i->arg[0], i->to)) {
-			err("ins=%d, char=%c\n", i->op, convmode);
-		}
-
 		assert((!req(i->arg[1], i->to) || req(i->arg[0], i->to)) &&
 			"cannot convert instruction to 2-address!");
 		emitcopy(i->to, i->arg[0], i->cls, fn, f);
@@ -422,6 +423,9 @@ emitins(Ins *i, Fn *fn, FILE *f)
 			break;
 		}
 		break;
+	case Omul:
+		die("MUL not implemented");
+		break;
 	case Odiv: case Oudiv:
 	case Orem: case Ourem:
 		die("DIV/UDIV/REM/UREM not implemented");
@@ -536,7 +540,7 @@ m68k_emitfn(Fn *fn, FILE *f)
 				b->s2 = s;
 				neg = 1;
 			}
-			fprintf(f, "\ttst     %s\n", rname[b->jmp.arg.val]);
+			fprintf(f, "\ttst    %s\n", rname[b->jmp.arg.val]);
 			fprintf(f, "\tb%s    .L%d\n", neg ? "ne" : "eq", id0+b->s2->id);
 			goto Jmp;
 		}

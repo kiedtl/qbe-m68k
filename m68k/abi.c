@@ -517,7 +517,7 @@ selvastart(Fn *fn, Params p, Ref ap)
 }
 
 /* Internal function for seldiv */
-static void
+static int
 _selcomptimediv(Ins *i, Fn *fn)
 {
 	assert(rtype(i->arg[1]) == RCon);
@@ -530,18 +530,28 @@ _selcomptimediv(Ins *i, Fn *fn)
 	if (ispow2(dvs)) {
 		bits shift = u32log2(dvs);
 		emit(Oshr, Kw, i->to, getcon(shift, fn), i->arg[0]);
-	} else if (dvs == 10 || dvs == 5) {
-		char *s = dvs == 10 ? "__divu32_10" : "__divu32_5";
-		emit(Ocall, 0, R, newlabelcon(s, fn), R);
-		emit(Oarg, i->cls, R, i->arg[0], R);
-	} else {
-		struct MagicSet m = libqbe_umagiccalc(dvs);
-		emit(Ocall, 0, R, newlabelcon("__divu32_magic", fn), R);
-		emit(Oarg, i->cls, R, i->arg[0], R);
-		emit(Oarg, Kw, R, getcon(dvs, fn), R);
-		emit(Oarg, Kw, R, getcon(m.m, fn), R);
-		emit(Oarg, Kw, R, getcon(m.s, fn), R);
+		return true;
 	}
+
+	return false;
+
+	/* Disabled for now, need to benchmark and check if
+	 * __divmodu32 is really slower than __divu32_magic */
+
+	/* TODO: copy D0 to dest here, forgot about that haha */
+
+	/* } else if (dvs == 10 || dvs == 5) { */
+	/* 	char *s = dvs == 10 ? "__divu32_10" : "__divu32_5"; */
+	/* 	emit(Ocall, 0, R, newlabelcon(s, fn), R); */
+	/* 	emit(Oarg, i->cls, R, i->arg[0], R); */
+	/* } else { */
+	/* 	struct MagicSet m = libqbe_umagiccalc(dvs); */
+	/* 	emit(Ocall, 0, R, newlabelcon("__divu32_magic", fn), R); */
+	/* 	emit(Oarg, i->cls, R, i->arg[0], R); */
+	/* 	emit(Oarg, Kw, R, getcon(dvs, fn), R); */
+	/* 	emit(Oarg, Kw, R, getcon(m.m, fn), R); */
+	/* 	emit(Oarg, Kw, R, getcon(m.s, fn), R); */
+	/* } */
 }
 
 /*
@@ -562,51 +572,107 @@ static void
 seldiv(Ins *i, Fn *fn)
 {
 	/* Check if the argument is comptime-known */
-	if (i->op == Oudiv) {
-		switch (rtype(i->arg[1])) {
-		break; case RCon:
-			;
-			Con pc = fn->con[i->arg[1].val];
-			if (pc.type == CBits) {
-				_selcomptimediv(i, fn);
+	if (i->op == Oudiv)
+	if (rtype(i->arg[1]) == RCon) {
+		Con pc = fn->con[i->arg[1].val];
+		if (pc.type == CBits) {
+			if (_selcomptimediv(i, fn))
 				return;
-			}
-		break;
 		}
 	}
 
 	/* Okay, fallback to a generic libqbe function call */
 
+	emit(Ocopy, Kw, i->to, TMP(D0), R);
+
 	char *s = NULL;
+	_Bool wantq = 0;
 	switch (i->op) {
-	break; case Oudiv: s = "__udiv";
-	break; case Odiv:  s = "__idiv";
-	break; case Ourem: s = "__urem";
-	break; case Orem:  s = "__irem";
+	break; case Oudiv: s = "__divmodu32"; wantq = 1;
+	break; case Odiv:  die("Signed division unimplemented");
+	break; case Ourem: s = "__divmodu32";
+	break; case Orem:  die("Signed division unimplemented");
 	break;
 	}
 
 	emit(Ocall, 0, R, newlabelcon(s, fn), R);
 
+	/* divmodu32 takes a third argument, indicating whether
+	 * to return the remainder or the quotient */
+	emit(Oarg, i->cls, R, getcon(wantq, fn), R);
+
+	emit(Oarg, i->cls, R, i->arg[1], R);
+	emit(Oarg, i->cls, R, i->arg[0], R);
+}
+
+
+/*
+ * m68k has only 16-bit mul, so we change muls to bitshifting or the
+ * appropriate libqbe calls.
+ */
+static void
+selmul(Ins *i, Fn *fn)
+{
+	/* Check if the argument is comptime-known */
+	if (rtype(i->arg[1]) == RCon) {
+		Con pc = fn->con[i->arg[1].val];
+		if (pc.type == CBits && ispow2(pc.bits.i)) {
+			bits shift = u32log2(pc.bits.i);
+			emit(Oshl, Kw, i->to, getcon(shift, fn), i->arg[0]);
+		}
+	}
+
+	/* Okay, fallback to a generic libqbe function call */
+
+	emit(Ocopy, Kw, i->to, TMP(D0), R);
+
+	emit(Ocall, 0, R, newlabelcon("__mulu32", fn), R);
+
 	emit(Oarg, i->cls, R, i->arg[0], R);
 	emit(Oarg, i->cls, R, i->arg[1], R);
 }
+
+
+static void
+selshift(Ins *i, Fn *fn)
+{
+	assert(i->op == Oshl || i->op == Oshr);
+
+	if (rtype(i->arg[1]) == RCon) {
+		Con pc = fn->con[i->arg[1].val];
+		if (pc.type == CBits && pc.bits.i > 7) {
+			Ref imm = newtmp("isel", Kw, fn);
+			emit(i->op, i->cls, i->to, i->arg[0], imm);
+			emit(Ocopy, Kw, imm, i->arg[1], R);
+			return;
+		}
+	}
+
+	emit(i->op, i->cls, i->to, i->arg[0], i->arg[1]);
+}
+
 
 void
 m68k_abi(Fn *fn)
 {
 	/*
-	 * Probably not considered an ABI thing, but let's lower
-	 * div/udiv/rem/urem instructions here while we're at it.
+	 * TODO: move this to isel.c
 	 *
-	 * Do this before processing args/params/calls, since seldiv will emit
-	 * calls.
+	 * Probably not considered an ABI thing, but let's lower
+	 * mul/div/udiv/rem/urem instructions here while we're at it.
+	 *
+	 * Do this before processing args/params/calls, since seldiv/selmul
+	 * will emit calls.
 	 *
 	 */
 	for (Blk *b = fn->start; b; b = b->link) {
 		curi = &insb[NIns];
 		for (Ins *i = &b->ins[b->nins]; i != b->ins;) {
 			switch ((--i)->op) {
+			break; case Oshr: case Oshl:
+				selshift(i, fn);
+			break; case Omul:
+				selmul(i, fn);
 			break; case Oudiv: case Odiv: case Ourem: case Orem:
 				seldiv(i, fn);
 			break; default:

@@ -66,8 +66,8 @@ _rt_begin:
 
 	; Default entry point. Print hello world and exit.
 	;
-	.weak main
-main:
+	.weak default_main
+default_main:
 	move.l  #STR,-(a7)
 	bsr     _rt_puts
 	addq.w  #4,a7
@@ -86,13 +86,6 @@ _rt_putc:
 	move.l  (4,a7), OUTPUT_ADDR
 	move.b  #0, CAN_OUTPUT
 	rts
-
-	; Print an unsigned long integer. Blocking.
-	;
-	.globl _rt_putul
-_rt_putul:
-	move.l  (4,a7),d0                  ; d0 is integer
-
 
 	; Print a string. Blocking.
 	;

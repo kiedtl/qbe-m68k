@@ -10,11 +10,12 @@
 //: 	CALL loop1 21
 //: 	CALL loop1 0
 //: 	CALL loop2 84
+//: 	CALL loop3 0
 //:
 //: 	rts
 
 //$ expect_output=""
-//$ expect_D0="21 0 0"
+//$ expect_D0="21 0 0 999"
 
 unsigned
 loop1(unsigned i)
@@ -30,4 +31,13 @@ loop2(unsigned i)
 	unsigned x = i;
 	for (; x && x == i; --x, --i);
 	return x;
+}
+
+unsigned
+loop3(unsigned i)
+{
+	for (unsigned nv = 1; nv < 1000; nv++) {
+		++i;
+	}
+	return i;
 }

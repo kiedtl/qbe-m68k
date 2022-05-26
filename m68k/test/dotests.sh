@@ -2,19 +2,19 @@
 #
 # Expects to be run from the m68k dir
 
-set -e
-
 TEST_FUNCS=(
-    hello
-    loop
-    strlen
-    strcpy
-    strcat
-    strcmp
-    div
+    #hello
+    #cmp
+    #loop
+    #strlen
+    #strcpy
+    #strcat
+    #strcmp
+    #tdiv
+    math
+    putul
+    collatz
 )
-
-mkdir -p "test/funcs/obj"
 
 ts() {
     chars=("-" "\\" "|" "/")
@@ -54,7 +54,7 @@ _qbe() {
 
 # _vasm ASM OBJ
 _vasm() {
-    vasmm68k_std -quiet -Fvobj "$1" -o "$2"
+    vasmm68k_std -quiet -I../third_party/libqbe/ -Fvobj "$1" -o "$2"
 }
 
 # _vlink BIN OBJ...
@@ -63,6 +63,19 @@ _vlink() {
     shift 1
     vlink -brawbin1 -evector_table -o "$bin" $@
 }
+
+set -e
+mkdir -p "test/funcs/obj"
+
+rt_src="test/rt/rt.asm"
+rt_end_src="test/rt/rt-end.asm"
+rt_obj="test/rt/rt.o"
+rt_end_obj="test/rt/rt-end.o"
+
+name="[initializing]" && ts -1 'compiling rt'
+_vasm $rt_src $rt_obj
+_vasm $rt_end_src $rt_end_obj
+name="[initializing]" && ts  0 'OK'
 
 for name in ${TEST_FUNCS[*]}
 do
@@ -88,7 +101,9 @@ do
     ts 2 "qbe"     && _qbe   "$ssa" "$asm"
     ts 3 "vasm"    && _vasm  "$asm" "$obj"
     ts 4 "harness" && _vasm  "$harn_asm" "$harn_obj"
-    ts 5 "vlink"   && _vlink "$bin" 'test/rt/rt.o' "$harn_obj" "$obj"
+    ts 5 "vlink"   && _vlink "$bin" "$rt_obj" "$harn_obj" "$obj" "$rt_end_obj"
+
+    ts 6 "running"
 
     stderr_file=$(mktemp)
     stdout=$(sim "$bin" 2> "$stderr_file")

@@ -4,4 +4,6 @@
 void _rt_putc(char);
 void _rt_puts(char *);
 
+extern void *HERE;
+
 #endif
