@@ -3,14 +3,14 @@
 # Expects to be run from the m68k dir
 
 TEST_FUNCS=(
-    #hello
-    #cmp
-    #loop
-    #strlen
-    #strcpy
-    #strcat
-    #strcmp
-    #tdiv
+    hello
+    cmp
+    loop
+    strlen
+    strcpy
+    strcat
+    strcmp
+    tdiv
     math
     putul
     collatz

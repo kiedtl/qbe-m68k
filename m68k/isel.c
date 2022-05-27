@@ -3,10 +3,27 @@
 static void
 fixarg(Ref *r, int k, Ins *i, Fn *fn)
 {
-	(void)r;
-	(void)k;
 	(void)i;
-	(void)fn;
+	Ref r0, r1;
+
+	r0 = r1 = *r;
+	switch (rtype(r0)) {
+	case RTmp:
+		if (isreg(r0))
+			break;
+		int s = fn->tmp[r0.val].slot;
+		if (s != -1) {
+			/* aggregate passed by value on
+			 * stack, or fast local address,
+			 * replace with slot if we can
+			 */
+			r1 = newtmp("isel", k, fn);
+			emit(Oaddr, k, r1, SLOT(s), R);
+			break;
+		}
+		break;
+	}
+	*r = r1;
 }
 
 static void

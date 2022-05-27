@@ -107,7 +107,8 @@ static struct {
 	{ Oswap,   Kw, "exg.l   %0, %1" },
 	{ Ocall,   Kw, "bsr     %0" },
 	{ Opush,   Ki, "move.%k %0, -(sp)" },
-	{ Oaddr,   Ki, "+add    %1, %=" },
+	//{ Oaddr,   Ki, "lea     %M0, %=" },
+	{ Osalloc, Kw, "add.w   %0, sp" },
 	{ NOp, 0, 0 }
 };
 
@@ -382,6 +383,13 @@ emitins(Ins *i, Fn *fn, FILE *f)
 		}
 		break;
 	case Onop:
+		break;
+	case Oaddr:
+		assert(rtype(i->arg[0]) == RSlot);
+		char *rn = rname[i->to.val];
+		int64_t s = -slot(i->arg[0].val, fn);
+		fprintf(f, "\tmove.l fp, %s\n", rn);
+		fprintf(f, "\tadd.w  #%"PRId64", %s\n", s, rn);
 		break;
 	case Ocall:
 		switch (rtype(i->arg[0])) {

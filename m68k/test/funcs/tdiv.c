@@ -2,7 +2,7 @@
 //: 	move.l  #0, -(a7)
 //: 	move.l  #\dvs, -(a7)
 //: 	move.l  #\dvd, -(a7)
-//: 	bsr     __divmodu32
+//: 	bsr     mydiv
 //: 	add.w   #12,a7
 //: 	move.l  #0x1, 0x200000
 //: .endm
@@ -24,7 +24,7 @@
 #include "libqbe.h"
 
 u32
-__divmodu32(u32 dvd, u32 dvs, u32 *rem_dest)
+mydiv(u32 dvd, u32 dvs, u32 *rem_dest)
 {
 	u32 bit = 1;
 	while (dvs < dvd && bit && (dvs & (1 << 31)) == 0) {

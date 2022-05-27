@@ -11,6 +11,8 @@
 //: 	.globl main
 //: main:
 //:
+//: 	CALL mul2     7     -1        ; mul by power of 2
+//: 	CALL mul4     7     -1        ; mul by power of 2
 //: 	CALL mul      7      3        ; normal small mul
 //: 	CALL mul     14     10        ; normal small mul
 //: 	CALL mul  42342  32791        ; larger mul, still 16-bit
@@ -24,7 +26,7 @@
 //: 	rts
 
 //$ expect_output=""
-//$ expect_D0="21 140 1388436522 1620587154 0 321 0 4"
+//$ expect_D0="14 28 21 140 1388436522 1620587154 0 321 0 4"
 
 #include "libqbe.h"
 #include "rt/rt.h"
@@ -32,6 +34,9 @@
 #define LIBQBE_NO_BUILTIN_MAGICS
 #define LIBQBE_NO_DIVU32_MAGIC
 #include "div.c"
+
+unsigned mul2(unsigned a, unsigned _) { return a * 2; }
+unsigned mul4(unsigned a, unsigned _) { return a * 4; }
 
 unsigned
 mul(unsigned a, unsigned b)

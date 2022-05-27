@@ -352,7 +352,7 @@ selcall(Fn *fn, Ins *i0, Ins *i1, Insl **ilp)
 			stk += 4;
 	}
 
-	emit(Oaddr, Kw, TMP(SP), getcon(stk, fn), TMP(SP));
+	emit(Osalloc, Kw, R, getcon(-stk, fn), R);
 
 	if (!req(i1->arg[1], R)) {
 		stkblob(i1->to, cr.type, fn, ilp);
@@ -618,7 +618,8 @@ selmul(Ins *i, Fn *fn)
 		Con pc = fn->con[i->arg[1].val];
 		if (pc.type == CBits && ispow2(pc.bits.i)) {
 			bits shift = u32log2(pc.bits.i);
-			emit(Oshl, Kw, i->to, getcon(shift, fn), i->arg[0]);
+			emit(Oshl, Kw, i->to, i->arg[0], getcon(shift, fn));
+			return;
 		}
 	}
 
