@@ -10,7 +10,7 @@ TEST_FUNCS=(
     strcpy
     strcat
     strcmp
-    tdiv
+    divmod32
     math
     putul
     collatz
